@@ -1,0 +1,1742 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Sanitation Surveillance System</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            active: '#10B981', // Vibrant Green
+                            idle: '#F59E0B',   // Amber Yellow
+                            stopped: '#EF4444',// Crimson Red
+                            offline: '#64748B' // Slate Gray
+                        }
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'spin-slow': 'spin 12s linear infinite',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        /* Custom scrollbar styling for both light and dark modes */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.05);
+            border-radius: 4px;
+        }
+        .dark ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: #475569;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        .dark ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+        /* Map glow effects for enhanced modern visuals */
+        .map-glow {
+            filter: drop-shadow(0 0 10px rgba(16, 185, 129, 0.35));
+        }
+        .map-glow-stopped {
+            filter: drop-shadow(0 0 10px rgba(239, 68, 68, 0.5));
+        }
+    </style>
+</head>
+<body class="h-full overflow-hidden text-slate-800 dark:text-slate-100 bg-slate-50 dark:bg-slate-950 transition-colors duration-200" onload="initDashboard()">
+
+    <div class="flex h-full overflow-hidden">
+
+        <!-- Sidebar Navigation -->
+        <aside class="hidden md:flex md:flex-shrink-0 flex-col w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 transition-colors duration-200">
+            <!-- Brand Logo Header -->
+            <div class="flex items-center gap-3 h-16 px-6 border-b border-slate-100 dark:border-slate-800/80 bg-emerald-50/40 dark:bg-emerald-950/10">
+                <div class="flex items-center justify-center w-9 h-9 rounded-xl bg-emerald-600 dark:bg-emerald-500 text-white shadow-md shadow-emerald-200 dark:shadow-none">
+                    <i class="fa-solid fa-recycle text-lg animate-spin-slow"></i>
+                </div>
+                <div>
+                    <h1 class="text-sm font-extrabold tracking-tight text-emerald-950 dark:text-emerald-400 uppercase leading-none">Sanitation</h1>
+                    <p class="text-[10px] text-emerald-600 dark:text-emerald-500 font-semibold uppercase tracking-wider mt-1">Control Room</p>
+                </div>
+            </div>
+
+            <nav class="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
+                <button onclick="switchTab('dashboard')" id="btn-tab-dashboard" class="nav-item flex items-center justify-between w-full px-4 py-3 text-sm font-semibold rounded-xl transition-all duration-150 bg-emerald-600 text-white shadow-md shadow-emerald-100 dark:shadow-none">
+                    <div class="flex items-center gap-3">
+                        <i class="fa-solid fa-chart-line text-lg"></i>
+                        <span>Dashboard</span>
+                    </div>
+                    <span class="w-2 h-2 rounded-full bg-white"></span>
+                </button>
+
+                <button onclick="switchTab('tracking')" id="btn-tab-tracking" class="nav-item flex items-center justify-between w-full px-4 py-3 text-sm font-semibold rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-150">
+                    <div class="flex items-center gap-3">
+                        <i class="fa-solid fa-map-location-dot text-lg"></i>
+                        <span>Live Map / Tracking</span>
+                    </div>
+                </button>
+
+                <button onclick="switchTab('vehicles')" id="btn-tab-vehicles" class="nav-item flex items-center justify-between w-full px-4 py-3 text-sm font-semibold rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-150">
+                    <div class="flex items-center gap-3">
+                        <i class="fa-solid fa-truck-front text-lg"></i>
+                        <span>Vehicles Info</span>
+                    </div>
+                    <span class="px-2 py-0.5 text-[10px] rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold">15</span>
+                </button>
+
+                <button onclick="switchTab('workers')" id="btn-tab-workers" class="nav-item flex items-center justify-between w-full px-4 py-3 text-sm font-semibold rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-150">
+                    <div class="flex items-center gap-3">
+                        <i class="fa-solid fa-users-gear text-lg"></i>
+                        <span>Workers Profile</span>
+                    </div>
+                    <span class="px-2 py-0.5 text-[10px] rounded-full bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 font-bold">18</span>
+                </button>
+
+                <button onclick="switchTab('attendance')" id="btn-tab-attendance" class="nav-item flex items-center justify-between w-full px-4 py-3 text-sm font-semibold rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-150">
+                    <div class="flex items-center gap-3">
+                        <i class="fa-solid fa-clipboard-user text-lg text-emerald-500"></i>
+                        <span>Attendance Tracking</span>
+                    </div>
+                    <span class="px-2 py-0.5 text-[10px] rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 font-bold">96%</span>
+                </button>
+
+                <button onclick="switchTab('reports')" id="btn-tab-reports" class="nav-item flex items-center justify-between w-full px-4 py-3 text-sm font-semibold rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-150">
+                    <div class="flex items-center gap-3">
+                        <i class="fa-solid fa-file-invoice-dollar text-lg"></i>
+                        <span>Reports & Analytics</span>
+                    </div>
+                </button>
+
+                <button onclick="switchTab('alerts')" id="btn-tab-alerts" class="nav-item flex items-center justify-between w-full px-4 py-3 text-sm font-semibold rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-150">
+                    <div class="flex items-center gap-3">
+                        <i class="fa-solid fa-bell-exclamation text-lg text-rose-500"></i>
+                        <span>Important Alerts</span>
+                    </div>
+                    <span id="sidebar-alert-badge" class="px-2 py-0.5 text-[10px] rounded-full bg-rose-100 dark:bg-rose-950/50 text-rose-700 dark:text-rose-400 font-bold">4</span>
+                </button>
+
+                <button onclick="switchTab('complaints')" id="btn-tab-complaints" class="nav-item flex items-center justify-between w-full px-4 py-3 text-sm font-semibold rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-150">
+                    <div class="flex items-center gap-3">
+                        <i class="fa-solid fa-comments text-lg"></i>
+                        <span>Complaints Desk</span>
+                    </div>
+                </button>
+
+                <button onclick="switchTab('admin')" id="btn-tab-admin" class="nav-item flex items-center justify-between w-full px-4 py-3 text-sm font-semibold rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-150">
+                    <div class="flex items-center gap-3">
+                        <i class="fa-solid fa-user-shield text-lg text-emerald-500"></i>
+                        <span>Admin Management</span>
+                    </div>
+                </button>
+
+                <button onclick="switchTab('settings')" id="btn-tab-settings" class="nav-item flex items-center justify-between w-full px-4 py-3 text-sm font-semibold rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-150">
+                    <div class="flex items-center gap-3">
+                        <i class="fa-solid fa-sliders text-lg"></i>
+                        <span>Control Settings</span>
+                    </div>
+                </button>
+            </nav>
+
+            <!-- Bottom Control Block / Simulator Trigger -->
+            <div class="p-4 border-t border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/20">
+                <div class="p-3 bg-white dark:bg-slate-850 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm">
+                    <h4 class="text-xs font-bold text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                        Dashboard Engine
+                    </h4>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400 mb-3">Simulate actual street vehicle movement patterns.</p>
+                    <button onclick="toggleSimulation()" id="btn-sim" class="w-full py-2 px-3 text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 active:bg-slate-950 dark:bg-slate-800 dark:hover:bg-slate-700 transition-colors rounded-lg flex items-center justify-center gap-2 shadow-sm">
+                        <i class="fa-solid fa-play"></i>
+                        <span>Start Live Movement</span>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Workspace Area -->
+        <main class="flex-1 flex flex-col h-full overflow-hidden">
+
+            <!-- Top Header Module -->
+            <header class="flex flex-col xl:flex-row xl:items-center xl:justify-between px-6 py-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 gap-4 transition-colors duration-200">
+                <!-- Branding Left -->
+                <div>
+                    <h2 class="text-lg font-extrabold text-slate-900 dark:text-slate-50 leading-tight">SANITIZATION ROOM SURVEILLANCE</h2>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Municipality Smart Waste & Route Vehicle Fleet Dashboard</p>
+                </div>
+
+                <!-- Clock / Date Mid -->
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-200/60 dark:border-slate-700/50 shadow-sm text-xs font-bold text-slate-700 dark:text-slate-300">
+                        <i class="fa-regular fa-calendar-days text-slate-500"></i>
+                        <span id="live-date">24 May 2024</span>
+                    </div>
+                    <div class="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-200/60 dark:border-slate-700/50 shadow-sm text-xs font-bold text-slate-700 dark:text-slate-300">
+                        <i class="fa-regular fa-clock text-slate-500"></i>
+                        <span id="live-time">10:45:00 AM</span>
+                    </div>
+                </div>
+
+                <!-- Status Pills Right -->
+                <div class="flex flex-wrap items-center gap-2 bg-slate-50 dark:bg-slate-850 p-1.5 rounded-xl border border-slate-100 dark:border-slate-800">
+                    <div class="flex items-center gap-1.5 bg-white dark:bg-slate-900 px-3 py-1 rounded-lg shadow-sm border border-slate-100 dark:border-slate-800 text-[11px] font-bold text-emerald-700 dark:text-emerald-400">
+                        <span class="w-2.5 h-2.5 rounded-full bg-brand-active"></span>
+                        On Route: <span id="hdr-active">12</span>
+                    </div>
+                    <div class="flex items-center gap-1.5 bg-white dark:bg-slate-900 px-3 py-1 rounded-lg shadow-sm border border-slate-100 dark:border-slate-800 text-[11px] font-bold text-amber-700 dark:text-amber-400">
+                        <span class="w-2.5 h-2.5 rounded-full bg-brand-idle"></span>
+                        Slow/Idle: <span id="hdr-idle">2</span>
+                    </div>
+                    <div class="flex items-center gap-1.5 bg-white dark:bg-slate-900 px-3 py-1 rounded-lg shadow-sm border border-slate-100 dark:border-slate-800 text-[11px] font-bold text-rose-700 dark:text-rose-400">
+                        <span class="w-2.5 h-2.5 rounded-full bg-brand-stopped animate-pulse"></span>
+                        Stopped: <span id="hdr-stopped">1</span>
+                    </div>
+                    <div class="flex items-center gap-1.5 bg-white dark:bg-slate-900 px-3 py-1 rounded-lg shadow-sm border border-slate-100 dark:border-slate-800 text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                        <span class="w-2.5 h-2.5 rounded-full bg-brand-offline"></span>
+                        Offline: <span id="hdr-offline">0</span>
+                    </div>
+
+                    <!-- Theme Switcher Button -->
+                    <div class="h-6 w-px bg-slate-200 dark:bg-slate-700 mx-1"></div>
+                    <button onclick="toggleTheme()" class="w-8 h-8 flex items-center justify-center rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-all shadow-sm" title="Switch Theme">
+                        <i id="theme-icon-indicator" class="fa-solid fa-moon"></i>
+                    </button>
+
+                    <!-- Profile Dropdown -->
+                    <div class="h-6 w-px bg-slate-200 dark:bg-slate-700 mx-1"></div>
+                    <div class="flex items-center gap-2 pl-1 pr-2">
+                        <img class="w-7 h-7 rounded-full border border-slate-300 dark:border-slate-700 shadow-sm" src="https://placehold.co/100x100/10B981/ffffff?text=AD" alt="Admin Profile">
+                        <div class="hidden xl:block text-left">
+                            <p class="text-[11px] font-bold text-slate-800 dark:text-slate-200 leading-tight">Admin Officer</p>
+                            <p class="text-[9px] text-slate-500 dark:text-slate-400 leading-none">Command Room</p>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard Content Panels -->
+            <div class="flex-1 overflow-y-auto p-6 space-y-6" id="workspace-viewport">
+
+                <!-- MAIN INTERACTIVE DASHBOARD VIEW (TAB 1) -->
+                <div id="tab-dashboard-view" class="space-y-6 transition-all duration-200">
+                    
+                    <!-- GRID CONTAINER: Today's Summary + Map View -->
+                    <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+
+                        <!-- LEFT HAND WORKSPACE COLUMNS: SUMMARY AND PROGRESS (GRID span 5) -->
+                        <div class="xl:col-span-5 flex flex-col gap-6">
+                            
+                            <!-- Today's Summary Dashboard Card -->
+                            <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-sm transition-colors duration-200">
+                                <div class="flex items-center justify-between mb-4 border-b border-slate-100 dark:border-slate-800 pb-3">
+                                    <h3 class="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                                        <i class="fa-solid fa-list-check text-emerald-600 dark:text-emerald-500"></i>
+                                        Today's Operation Summary
+                                    </h3>
+                                    <span class="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded-md font-bold uppercase">Real-Time</span>
+                                </div>
+
+                                <!-- Key Info Grid -->
+                                <div class="grid grid-cols-4 gap-3 mb-4">
+                                    <!-- Card Total Vehicles -->
+                                    <div class="bg-slate-50/80 dark:bg-slate-800/50 border border-slate-200/50 dark:border-slate-700/50 rounded-xl p-2.5 text-center transition-all hover:shadow-md hover:bg-slate-50 dark:hover:bg-slate-800">
+                                        <div class="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1 leading-tight">Total Fleet</div>
+                                        <div class="text-xl font-extrabold text-slate-900 dark:text-slate-50" id="metric-total-v">15</div>
+                                        <div class="text-[9px] text-slate-500 dark:text-slate-450 mt-1 flex items-center justify-center gap-1">
+                                            <i class="fa-solid fa-truck"></i> Active Trucks
+                                        </div>
+                                    </div>
+                                    <!-- Card Active Vehicles -->
+                                    <div class="bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900 rounded-xl p-2.5 text-center transition-all hover:shadow-md hover:bg-emerald-50 dark:hover:bg-emerald-950/40">
+                                        <div class="text-xs font-semibold text-emerald-700 dark:text-emerald-400 mb-1 leading-tight">On Route</div>
+                                        <div class="text-xl font-extrabold text-emerald-600 dark:text-emerald-400" id="metric-active-v">12</div>
+                                        <div class="text-[9px] text-emerald-500 dark:text-emerald-500 mt-1 flex items-center justify-center gap-1">
+                                            <i class="fa-solid fa-circle-play text-emerald-500"></i> Active Status
+                                        </div>
+                                    </div>
+                                    <!-- Card Idle Vehicles -->
+                                    <div class="bg-amber-50/50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900 rounded-xl p-2.5 text-center transition-all hover:shadow-md hover:bg-amber-50 dark:hover:bg-amber-950/40">
+                                        <div class="text-xs font-semibold text-amber-700 dark:text-amber-400 mb-1 leading-tight">Slow / Idle</div>
+                                        <div class="text-xl font-extrabold text-amber-500" id="metric-idle-v">2</div>
+                                        <div class="text-[9px] text-slate-500 dark:text-amber-500 mt-1 flex items-center justify-center gap-1">
+                                            <i class="fa-solid fa-clock text-amber-500"></i> Low Speeds
+                                        </div>
+                                    </div>
+                                    <!-- Card Stopped Vehicles -->
+                                    <div class="bg-rose-50/50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900 rounded-xl p-2.5 text-center transition-all hover:shadow-md hover:bg-rose-50 dark:hover:bg-rose-950/40">
+                                        <div class="text-xs font-semibold text-rose-700 dark:text-rose-400 mb-1 leading-tight">Stopped</div>
+                                        <div class="text-xl font-extrabold text-rose-600" id="metric-stopped-v">1</div>
+                                        <div class="text-[9px] text-rose-500 dark:text-rose-400 mt-1 flex items-center justify-center gap-1">
+                                            <i class="fa-solid fa-triangle-exclamation text-rose-500 animate-bounce"></i> Exception
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Operational Bottom Details Grid -->
+                                <div class="grid grid-cols-4 gap-3">
+                                    <!-- Distance -->
+                                    <div class="bg-sky-50/50 dark:bg-sky-950/20 border border-sky-100 dark:border-sky-900 rounded-xl p-2.5 text-center">
+                                        <div class="text-xs font-bold text-slate-500 dark:text-slate-400 leading-tight mb-1">Total Distance</div>
+                                        <div class="text-base font-extrabold text-sky-950 dark:text-sky-300" id="metric-distance">84.6 km</div>
+                                        <div class="text-[9px] text-slate-500 dark:text-sky-400 mt-1"><i class="fa-solid fa-road text-sky-500"></i> Today Covered</div>
+                                    </div>
+                                    <!-- Time -->
+                                    <div class="bg-violet-50/50 dark:bg-violet-950/20 border border-violet-100 dark:border-violet-900 rounded-xl p-2.5 text-center">
+                                        <div class="text-xs font-bold text-slate-500 dark:text-slate-400 leading-tight mb-1">Total Hours</div>
+                                        <div class="text-base font-extrabold text-violet-950 dark:text-violet-300" id="metric-hours">8h 45m</div>
+                                        <div class="text-[9px] text-slate-500 dark:text-violet-400 mt-1"><i class="fa-regular fa-clock text-violet-500"></i> Operational</div>
+                                    </div>
+                                    <!-- Houses -->
+                                    <div class="bg-amber-50/40 dark:bg-amber-950/10 border border-amber-100/80 dark:border-amber-900/80 rounded-xl p-2.5 text-center">
+                                        <div class="text-xs font-bold text-slate-500 dark:text-slate-400 leading-tight mb-1">Households</div>
+                                        <div class="text-base font-extrabold text-amber-950 dark:text-amber-300" id="metric-houses">1,245</div>
+                                        <div class="text-[9px] text-slate-500 dark:text-amber-500 mt-1"><i class="fa-solid fa-house-chimney text-amber-600"></i> Trash Collected</div>
+                                    </div>
+                                    <!-- Workers -->
+                                    <div class="bg-teal-50/50 dark:bg-teal-950/20 border border-teal-100 dark:border-teal-900 rounded-xl p-2.5 text-center">
+                                        <div class="text-xs font-bold text-slate-500 dark:text-slate-400 leading-tight mb-1">Workers</div>
+                                        <div class="text-base font-extrabold text-teal-950 dark:text-teal-300" id="metric-workers">18</div>
+                                        <div class="text-[9px] text-slate-500 dark:text-teal-400 mt-1"><i class="fa-solid fa-user-check text-teal-600"></i> On-Duty Active</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Today's Progress & Action Banner -->
+                            <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-sm flex flex-col justify-between relative overflow-hidden transition-colors duration-200">
+                                <div class="flex items-center justify-between mb-2">
+                                    <h3 class="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                                        <i class="fa-solid fa-gauge-high text-sky-600 dark:text-sky-500"></i>
+                                        Today's Ward Progress
+                                    </h3>
+                                    <span class="text-xs text-slate-400 dark:text-slate-500 font-medium">Daily Metrics Target</span>
+                                </div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+                                    <!-- Standing Wing Callout Box (Requirement: "Large standalone callout box for Total Area Coverage Today: 72%") -->
+                                    <div class="md:col-span-4 bg-gradient-to-b from-emerald-50 to-emerald-100/50 dark:from-slate-800 dark:to-slate-800/40 border border-emerald-200/60 dark:border-slate-700 p-3 rounded-xl text-center flex flex-col justify-center items-center shadow-inner">
+                                        <span class="text-[10px] text-emerald-800 dark:text-emerald-400 font-extrabold tracking-wider uppercase leading-none">Total Coverage</span>
+                                        <div class="text-3xl font-black text-emerald-950 dark:text-slate-100 my-1">72%</div>
+                                        <div class="w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
+                                            <div class="bg-emerald-600 dark:bg-emerald-500 h-full rounded-full" style="width: 72%"></div>
+                                        </div>
+                                        <span class="text-[9px] text-emerald-700/80 dark:text-emerald-400 mt-1 font-semibold">Today's Target Completed</span>
+                                    </div>
+
+                                    <!-- Circular Progress Gauge Chart -->
+                                    <div class="md:col-span-4 flex justify-center relative">
+                                        <svg class="w-32 h-32" viewBox="0 0 100 100">
+                                            <!-- Background Circle -->
+                                            <circle cx="50" cy="50" r="40" stroke="#f1f5f9" class="stroke-slate-100 dark:stroke-slate-800" stroke-width="8" fill="transparent" stroke-dasharray="251.2" stroke-dashoffset="62.8" transform="rotate(135, 50, 50)" stroke-linecap="round" />
+                                            <!-- Active Progress Circle (72%) -->
+                                            <circle id="gauge-circle" cx="50" cy="50" r="40" stroke="#10b981" stroke-width="8" fill="transparent" stroke-dasharray="251.2" stroke-dashoffset="112.5" transform="rotate(135, 50, 50)" stroke-linecap="round" class="transition-all duration-1000 ease-out" />
+                                            <text x="50" y="47" text-anchor="middle" font-size="16" font-weight="900" class="fill-slate-900 dark:fill-slate-100" font-family="Inter">72%</text>
+                                            <text x="50" y="62" text-anchor="middle" font-size="7" font-weight="700" class="fill-slate-400 dark:fill-slate-500" font-family="Inter" class="uppercase">Area Covered</text>
+                                        </svg>
+                                    </div>
+
+                                    <!-- Status Breakdown Legend Info -->
+                                    <div class="md:col-span-4 space-y-2 text-xs">
+                                        <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-1.5">
+                                            <div class="flex items-center gap-1.5 font-bold text-slate-700 dark:text-slate-300">
+                                                <span class="w-2.5 h-2.5 rounded bg-emerald-500"></span>
+                                                Completed
+                                            </div>
+                                            <span class="font-extrabold text-slate-900 dark:text-slate-100" id="p-completed">72%</span>
+                                        </div>
+                                        <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-1.5">
+                                            <div class="flex items-center gap-1.5 font-bold text-slate-700 dark:text-slate-300">
+                                                <span class="w-2.5 h-2.5 rounded bg-amber-400"></span>
+                                                In Progress
+                                            </div>
+                                            <span class="font-extrabold text-slate-900 dark:text-slate-100" id="p-progress">18%</span>
+                                        </div>
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center gap-1.5 font-bold text-slate-700 dark:text-slate-300">
+                                                <span class="w-2.5 h-2.5 rounded bg-rose-400"></span>
+                                                Pending
+                                            </div>
+                                            <span class="font-extrabold text-slate-900 dark:text-slate-100" id="p-pending">10%</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Success Action Banner -->
+                                <div class="mt-4 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100/80 dark:border-emerald-900/50 px-4 py-2 rounded-xl flex items-center gap-2 text-emerald-800 dark:text-emerald-400 text-xs font-semibold">
+                                    <div class="bg-emerald-100 dark:bg-emerald-900/45 w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 text-emerald-700 dark:text-emerald-400">
+                                        <i class="fa-solid fa-thumbs-up"></i>
+                                    </div>
+                                    <span>Great! You are doing a good job today. Ward clearance is on track.</span>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <!-- RIGHT HAND WORKSPACE COLUMN: INTERACTIVE MAP GRID (GRID span 7) -->
+                        <div class="xl:col-span-7 flex flex-col bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-sm transition-colors duration-200">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="flex items-center gap-2">
+                                    <i class="fa-solid fa-map-location-dot text-emerald-600 dark:text-emerald-500"></i>
+                                    <h3 class="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Live Vehicle Fleet Map</h3>
+                                </div>
+                                
+                                <div class="flex items-center gap-2">
+                                    <!-- Refresh Status Counter -->
+                                    <span class="text-[10px] text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg flex items-center gap-1.5">
+                                        <i class="fa-solid fa-clock-rotate-left text-slate-400"></i>
+                                        <span id="ref-timer-text">Auto sync: 30s</span>
+                                    </span>
+                                    <!-- Map Controls Mode -->
+                                    <div class="flex rounded-lg border border-slate-200 dark:border-slate-700 p-0.5 bg-slate-50 dark:bg-slate-800 text-[10px] font-bold">
+                                        <button class="px-2 py-0.5 rounded-md bg-white dark:bg-slate-700 shadow-sm text-slate-800 dark:text-slate-200">Terrain</button>
+                                        <button class="px-2 py-0.5 text-slate-400 dark:text-slate-500">Wards Area</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Interactive Map Box Canvas Area -->
+                            <div class="relative flex-1 min-h-[360px] bg-sky-50/60 dark:bg-[#070b13] rounded-2xl border border-slate-100 dark:border-slate-800 overflow-hidden shadow-inner flex items-center justify-center transition-colors duration-200">
+                                <!-- Styled Simulated City Map Canvas SVG -->
+                                <svg class="absolute inset-0 w-full h-full object-cover select-none" viewBox="0 0 800 450" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <!-- Ward Territories Polygons (Colored semi-transparent zones) -->
+                                    <!-- Ward 10 (Light Slate Zone) -->
+                                    <polygon points="10,10 250,20 280,180 10,140" class="fill-slate-100 dark:fill-slate-900/30 stroke-slate-300 dark:stroke-slate-800" stroke-width="1.5" stroke-dasharray="3,3" />
+                                    <!-- Ward 11 (Pale Emerald Zone) -->
+                                    <polygon points="10,140 280,180 340,320 10,380" class="fill-emerald-100/20 dark:fill-emerald-950/10 stroke-emerald-400 dark:stroke-emerald-800/80" stroke-width="1.5" stroke-dasharray="3,3" />
+                                    <!-- Ward 12 (Yellow/Wheat Zone) -->
+                                    <polygon points="280,180 500,100 560,260 340,320" class="fill-amber-100/20 dark:fill-amber-950/10 stroke-amber-400 dark:stroke-amber-800/80" stroke-width="1.5" stroke-dasharray="3,3" />
+                                    <!-- Ward 13 (Green Zone) -->
+                                    <polygon points="10,380 340,320 450,440 10,440" class="fill-emerald-100/30 dark:fill-emerald-900/10 stroke-emerald-400 dark:stroke-emerald-700/60" stroke-width="1.5" stroke-dasharray="3,3" />
+                                    <!-- Ward 14 (Violet/Light Blue Zone) -->
+                                    <polygon points="340,320 560,260 620,440 450,440" class="fill-violet-100/20 dark:fill-violet-950/10 stroke-violet-400 dark:stroke-violet-800/80" stroke-width="1.5" stroke-dasharray="3,3" />
+                                    <!-- Ward 15 (Rose/Warm Zone) -->
+                                    <polygon points="500,100 780,10 790,200 560,260" class="fill-rose-100/20 dark:fill-rose-950/10 stroke-rose-400 dark:stroke-rose-800/80" stroke-width="1.5" stroke-dasharray="3,3" />
+                                    <!-- Ward 16 (Sky Zone) -->
+                                    <polygon points="560,260 790,200 790,440 620,440" class="fill-sky-100/20 dark:fill-sky-950/10 stroke-sky-400 dark:stroke-sky-800/80" stroke-width="1.5" stroke-dasharray="3,3" />
+
+                                    <!-- Flowing River (Municipal Blue Canal) -->
+                                    <path d="M 400,-10 C 420,120 280,160 480,240 C 600,290 520,380 600,460" class="stroke-blue-200 dark:stroke-blue-950" stroke-width="18" fill="none" stroke-linecap="round" stroke-opacity="0.8" />
+                                    <path d="M 400,-10 C 420,120 280,160 480,240 C 600,290 520,380 600,460" class="stroke-blue-400 dark:stroke-blue-800" stroke-width="14" fill="none" stroke-linecap="round" stroke-opacity="0.4" />
+
+                                    <!-- Main Streets Network System (Road Lines) -->
+                                    <!-- Route GJ-05-AB-1234 (Active Green Path) -->
+                                    <path id="route-path-ab" d="M 50,50 L 150,110 L 220,130 L 260,110 L 320,190" stroke="#10B981" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round" class="map-glow" />
+                                    <!-- Route GJ-05-CD-5678 (Idle Yellow Path) -->
+                                    <path id="route-path-cd" d="M 320,190 L 400,160 L 480,220 L 530,230" stroke="#F59E0B" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                                    <!-- Route GJ-05-HI-9012 (Stopped Red Warning Path) -->
+                                    <path id="route-path-hi" d="M 530,230 L 580,280 L 610,310 C 620,350 630,380 650,410" stroke="#EF4444" stroke-width="3" stroke-dasharray="4,4" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                                    <!-- Route GJ-05-EF-3456 (On Route Green Path) -->
+                                    <path id="route-path-ef" d="M 340,320 L 300,340 L 250,300 C 200,310 180,350 160,370" stroke="#10B981" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+
+                                    <!-- Secondary Connector Roads (Faded Gray network layout) -->
+                                    <path d="M 150,110 L 100,200 L 200,240 L 250,300" class="stroke-slate-300 dark:stroke-slate-800" stroke-width="1.5" fill="none" />
+                                    <path d="M 280,180 L 340,320" class="stroke-slate-300 dark:stroke-slate-800" stroke-width="1.5" fill="none" />
+                                    <path d="M 500,100 L 600,130 L 700,210" class="stroke-slate-300 dark:stroke-slate-800" stroke-width="1.5" fill="none" />
+                                    <path d="M 560,260 L 650,220 L 740,280" class="stroke-slate-300 dark:stroke-slate-800" stroke-width="1.5" fill="none" />
+
+                                    <!-- Ward Landmark Names Text Overlay -->
+                                    <text x="70" y="40" font-size="11" font-weight="800" class="fill-slate-400 dark:fill-slate-600" opacity="0.8">Ward 10</text>
+                                    <text x="80" y="220" font-size="11" font-weight="800" class="fill-emerald-600 dark:fill-emerald-500" opacity="0.6">Ward 11</text>
+                                    <text x="360" y="120" font-size="11" font-weight="800" class="fill-amber-600 dark:fill-amber-500" opacity="0.6">Ward 12</text>
+                                    <text x="80" y="420" font-size="11" font-weight="800" class="fill-emerald-600 dark:fill-emerald-500" opacity="0.6">Ward 13</text>
+                                    <text x="480" y="380" font-size="11" font-weight="800" class="fill-violet-600 dark:fill-violet-500" opacity="0.6">Ward 14</text>
+                                    <text x="680" y="70" font-size="11" font-weight="800" class="fill-rose-600 dark:fill-rose-500" opacity="0.6">Ward 15</text>
+                                    <text x="680" y="380" font-size="11" font-weight="800" class="fill-sky-600 dark:fill-sky-500" opacity="0.6">Ward 16</text>
+                                </svg>
+
+                                <!-- Floating Map Icons & Assets (Landmarks) -->
+                                <!-- City Park -->
+                                <div class="absolute" style="left: 45%; top: 32%">
+                                    <div class="flex items-center gap-1 bg-emerald-500/90 text-white font-bold text-[9px] py-1 px-1.5 rounded shadow-sm">
+                                        <i class="fa-solid fa-tree text-[10px]"></i>
+                                        <span>City Park</span>
+                                    </div>
+                                </div>
+                                <!-- General Hospital Landmark -->
+                                <div class="absolute" style="left: 78%; top: 52%">
+                                    <div class="flex items-center gap-1 bg-rose-600/90 text-white font-bold text-[9px] py-1 px-1.5 rounded shadow-sm animate-pulse-slow">
+                                        <i class="fa-solid fa-square-h text-[10px]"></i>
+                                        <span>Hospital Zone</span>
+                                    </div>
+                                </div>
+
+                                <!-- INTERACTIVE VEHICLE POINTER NODES -->
+                                <!-- 1. GJ-05-AB-1234 (Active Green Node) -->
+                                <div id="map-node-ab" onclick="clickMapNode('ab')" class="absolute transition-all duration-1000 ease-out cursor-pointer group" style="left: 40%; top: 42%;">
+                                    <span class="absolute inline-flex h-6 w-6 rounded-full bg-emerald-400 opacity-65 animate-ping"></span>
+                                    <div class="relative flex items-center bg-white dark:bg-slate-900 border-2 border-emerald-500 rounded-lg p-1 shadow-md hover:scale-110 transition-all">
+                                        <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 mr-1 flex-shrink-0"></div>
+                                        <i class="fa-solid fa-truck text-xs text-emerald-600 dark:text-emerald-400 mr-1"></i>
+                                        <span class="text-[9px] font-black text-slate-900 dark:text-slate-100 leading-none">GJ-05-AB-1234</span>
+                                    </div>
+                                </div>
+
+                                <!-- 2. GJ-05-CD-5678 (Idle Amber Node) -->
+                                <div id="map-node-cd" onclick="clickMapNode('cd')" class="absolute transition-all duration-1000 ease-out cursor-pointer group" style="left: 65%; top: 49%;">
+                                    <span class="absolute inline-flex h-6 w-6 rounded-full bg-amber-400 opacity-65 animate-ping"></span>
+                                    <div class="relative flex items-center bg-white dark:bg-slate-900 border-2 border-amber-500 rounded-lg p-1 shadow-md hover:scale-110 transition-all">
+                                        <div class="w-2.5 h-2.5 rounded-full bg-amber-500 mr-1 flex-shrink-0"></div>
+                                        <i class="fa-solid fa-truck text-xs text-amber-600 dark:text-amber-400 mr-1"></i>
+                                        <span class="text-[9px] font-black text-slate-900 dark:text-slate-100 leading-none">GJ-05-CD-5678</span>
+                                    </div>
+                                </div>
+
+                                <!-- 3. GJ-05-HI-9012 (Stopped Red Node) -->
+                                <div id="map-node-hi" onclick="clickMapNode('hi')" class="absolute transition-all duration-1000 ease-out cursor-pointer group animate-bounce" style="left: 81%; top: 88%;">
+                                    <span class="absolute inline-flex h-6 w-6 rounded-full bg-rose-400 opacity-65 animate-ping"></span>
+                                    <div class="relative flex items-center bg-white dark:bg-slate-900 border-2 border-rose-500 rounded-lg p-1 shadow-md hover:scale-110 transition-all">
+                                        <div class="w-2.5 h-2.5 rounded-full bg-rose-500 mr-1 flex-shrink-0"></div>
+                                        <i class="fa-solid fa-triangle-exclamation text-xs text-rose-500 mr-1 animate-pulse"></i>
+                                        <span class="text-[9px] font-black text-slate-900 dark:text-slate-100 leading-none">GJ-05-HI-9012</span>
+                                    </div>
+                                </div>
+
+                                <!-- 4. GJ-05-EF-3456 (On Route Green Node) -->
+                                <div id="map-node-ef" onclick="clickMapNode('ef')" class="absolute transition-all duration-1000 ease-out cursor-pointer group" style="left: 20%; top: 80%;">
+                                    <div class="relative flex items-center bg-white dark:bg-slate-900 border-2 border-emerald-500 rounded-lg p-1 shadow-md hover:scale-110 transition-all">
+                                        <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 mr-1 flex-shrink-0"></div>
+                                        <i class="fa-solid fa-truck text-xs text-emerald-600 dark:text-emerald-400 mr-1"></i>
+                                        <span class="text-[9px] font-black text-slate-900 dark:text-slate-100 leading-none">GJ-05-EF-3456</span>
+                                    </div>
+                                </div>
+
+                                <!-- Floating Map Legend & Overlay Widgets -->
+                                <div class="absolute right-3 top-3 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200/80 dark:border-slate-800 p-2.5 rounded-xl shadow-lg text-[10px] space-y-1.5 w-32 transition-colors duration-200">
+                                    <div class="font-extrabold text-slate-700 dark:text-slate-300 border-b border-slate-100 dark:border-slate-850 pb-1 mb-1 flex items-center gap-1">
+                                        <i class="fa-solid fa-circle-info"></i> Fleet Status
+                                    </div>
+                                    <div class="flex items-center gap-1.5 font-bold text-slate-600 dark:text-slate-400">
+                                        <span class="w-2 h-2 rounded-full bg-brand-active"></span>
+                                        <span>On Route</span>
+                                    </div>
+                                    <div class="flex items-center gap-1.5 font-bold text-slate-600 dark:text-slate-400">
+                                        <span class="w-2 h-2 rounded-full bg-brand-idle"></span>
+                                        <span>Slow / Idle</span>
+                                    </div>
+                                    <div class="flex items-center gap-1.5 font-bold text-slate-600 dark:text-slate-400">
+                                        <span class="w-2 h-2 rounded-full bg-brand-stopped"></span>
+                                        <span>Stopped</span>
+                                    </div>
+                                    <div class="flex items-center gap-1.5 font-bold text-slate-600 dark:text-slate-400">
+                                        <span class="w-2 h-2 rounded-full bg-brand-offline"></span>
+                                        <span>Offline</span>
+                                    </div>
+                                </div>
+
+                                <!-- Zoom/Interactive Map Control Overlay Tools -->
+                                <div class="absolute left-3 bottom-3 flex flex-col gap-1">
+                                    <button class="w-8 h-8 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-850 shadow-md flex items-center justify-center text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors" onclick="alertNotification('Interactive map boundary locked to Wards 10-16 context.')"><i class="fa-solid fa-plus text-xs"></i></button>
+                                    <button class="w-8 h-8 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-850 shadow-md flex items-center justify-center text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors" onclick="alertNotification('Interactive map boundary locked to Wards 10-16 context.')"><i class="fa-solid fa-minus text-xs"></i></button>
+                                </div>
+
+                                <!-- Floating Detail Tooltip Card System (Dynamic on Vehicle Click) -->
+                                <div id="map-detail-tooltip" class="absolute hidden bottom-4 right-4 bg-slate-900 dark:bg-slate-950 text-white rounded-xl shadow-2xl p-4 border border-slate-800 dark:border-slate-800 w-64 transform transition-all duration-300">
+                                    <div class="flex justify-between items-start mb-2">
+                                        <div>
+                                            <h4 class="text-xs font-black text-emerald-400" id="tooltip-id">GJ-05-AB-1234</h4>
+                                            <p class="text-[10px] text-slate-400 font-medium">Primary Route Ward Tracking</p>
+                                        </div>
+                                        <button onclick="closeTooltip()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+                                    </div>
+                                    <div class="space-y-1.5 text-[11px] border-t border-slate-800/80 pt-2">
+                                        <div class="flex justify-between"><span class="text-slate-400">Driver:</span> <span id="tooltip-driver" class="font-bold">Ramesh</span></div>
+                                        <div class="flex justify-between"><span class="text-slate-400">Position:</span> <span id="tooltip-loc" class="font-bold">Ward 10, Main Rd</span></div>
+                                        <div class="flex justify-between"><span class="text-slate-400">Speed:</span> <span id="tooltip-speed" class="font-bold">24 km/h</span></div>
+                                        <div class="flex justify-between"><span class="text-slate-400">Progress:</span> <span id="tooltip-prog" class="font-bold text-emerald-400">75%</span></div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- TWO-COLUMN BOTTOM DATA LAYER: IMPORTANT ALERTS & LIVE VEHICLES TABLE -->
+                    <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+                        
+                        <!-- MODULE D: Important Alerts Live Panel (Col Span 5) -->
+                        <div class="xl:col-span-5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-sm flex flex-col justify-between transition-colors duration-200">
+                            <div class="flex items-center justify-between mb-4 pb-2 border-b border-slate-100 dark:border-slate-800">
+                                <h3 class="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                                    <i class="fa-solid fa-triangle-exclamation text-rose-500 animate-pulse"></i>
+                                    Important Exception Alerts
+                                </h3>
+                                <button onclick="switchTab('alerts')" class="text-[11px] text-emerald-600 dark:text-emerald-500 font-bold hover:underline">View All &rarr;</button>
+                            </div>
+
+                            <!-- Alert Log Content Rows -->
+                            <div class="space-y-3 flex-1 overflow-y-auto max-h-56 pr-1">
+                                <!-- Alert 1 (High Severity Red) -->
+                                <div onclick="clickMapNode('ab')" class="cursor-pointer bg-rose-50/50 dark:bg-rose-950/10 border border-rose-100/85 dark:border-rose-900/40 hover:bg-rose-50 dark:hover:bg-rose-950/30 p-3 rounded-xl flex items-start gap-2.5 transition-all">
+                                    <div class="w-8 h-8 rounded-lg bg-rose-100 dark:bg-rose-900/55 flex items-center justify-center flex-shrink-0 text-rose-600 dark:text-rose-400 shadow-sm">
+                                        <i class="fa-solid fa-circle-exclamation text-base"></i>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-[10px] font-black text-rose-800 dark:text-rose-400 uppercase tracking-wider">High Severity</span>
+                                            <span class="text-[9px] text-rose-500 dark:text-rose-400 font-bold">10:42 AM</span>
+                                        </div>
+                                        <p class="text-xs font-bold text-rose-950 dark:text-rose-200 mt-0.5 truncate">Vehicle GJ-05-AB-1234 stopped for >20 mins</p>
+                                        <p class="text-[10px] text-rose-600 dark:text-rose-400 font-medium">Located at Ward 10, Main Road boundary</p>
+                                    </div>
+                                    <span class="text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 self-center"><i class="fa-solid fa-chevron-right text-xs"></i></span>
+                                </div>
+
+                                <!-- Alert 2 (Medium Severity Amber) -->
+                                <div class="cursor-pointer bg-amber-50/50 dark:bg-amber-950/10 border border-amber-100/85 dark:border-amber-900/40 hover:bg-amber-50 dark:hover:bg-amber-950/30 p-3 rounded-xl flex items-start gap-2.5 transition-all">
+                                    <div class="w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-900/55 flex items-center justify-center flex-shrink-0 text-amber-600 dark:text-amber-400 shadow-sm">
+                                        <i class="fa-solid fa-route text-base"></i>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-[10px] font-black text-amber-800 dark:text-amber-400 uppercase tracking-wider">Route Deviation</span>
+                                            <span class="text-[9px] text-amber-500 dark:text-amber-450 font-bold">10:35 AM</span>
+                                        </div>
+                                        <p class="text-xs font-bold text-amber-950 dark:text-amber-200 mt-0.5 truncate">Route deviation detected in Ward 12</p>
+                                        <p class="text-[10px] text-amber-600 dark:text-amber-400 font-medium">Assigned route bypassed school sector grid</p>
+                                    </div>
+                                    <span class="text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 self-center"><i class="fa-solid fa-chevron-right text-xs"></i></span>
+                                </div>
+
+                                <!-- Alert 3 (Warning Low Severity) -->
+                                <div onclick="clickMapNode('cd')" class="cursor-pointer bg-amber-50/30 dark:bg-amber-950/5 border border-amber-100/50 dark:border-amber-900/30 hover:bg-amber-50/60 dark:hover:bg-slate-800/60 p-3 rounded-xl flex items-start gap-2.5 transition-all">
+                                    <div class="w-8 h-8 rounded-lg bg-amber-100/60 dark:bg-amber-900/40 flex items-center justify-center flex-shrink-0 text-amber-500 dark:text-amber-400 shadow-sm">
+                                        <i class="fa-solid fa-truck-monster text-base"></i>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-[10px] font-black text-amber-700 dark:text-amber-400 uppercase tracking-wider">Warning Alert</span>
+                                            <span class="text-[9px] text-amber-500 dark:text-amber-450 font-bold">10:28 AM</span>
+                                        </div>
+                                        <p class="text-xs font-bold text-slate-800 dark:text-slate-200 mt-0.5 truncate">Vehicle GJ-05-CD-5678 idle for >10 mins</p>
+                                        <p class="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Vehicle ignition is ON, speeds below 2 km/h</p>
+                                    </div>
+                                    <span class="text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 self-center"><i class="fa-solid fa-chevron-right text-xs"></i></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- MODULE E: Live Vehicles Data Table (Col Span 7) -->
+                        <div class="xl:col-span-7 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-sm flex flex-col justify-between transition-colors duration-200">
+                            <div class="flex items-center justify-between mb-4 pb-2 border-b border-slate-100 dark:border-slate-800">
+                                <h3 class="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                                    <i class="fa-solid fa-truck-moving text-emerald-600 dark:text-emerald-500"></i>
+                                    Live Vehicles Status Telemetry
+                                </h3>
+                                <div class="flex gap-2">
+                                    <button onclick="alertNotification('Exporting spreadsheet data...')" class="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 border border-slate-200 dark:border-slate-700 text-xs px-2.5 py-1 rounded-lg flex items-center gap-1 transition-colors"><i class="fa-solid fa-download"></i> CSV</button>
+                                    <button onclick="alertNotification('Reloading active vehicles...')" class="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 border border-slate-200 dark:border-slate-700 text-xs px-2.5 py-1 rounded-lg flex items-center gap-1 transition-colors"><i class="fa-solid fa-arrows-rotate"></i> Reload</button>
+                                </div>
+                            </div>
+
+                            <!-- Table Wrapper with overflow scrolling -->
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left border-collapse text-xs">
+                                    <thead>
+                                        <tr class="text-slate-400 dark:text-slate-500 font-extrabold uppercase border-b border-slate-100 dark:border-slate-800 text-[10px] tracking-wider bg-slate-50/50 dark:bg-slate-850/50">
+                                            <th class="py-2.5 px-3">Vehicle No</th>
+                                            <th class="py-2.5 px-3">Driver Name</th>
+                                            <th class="py-2.5 px-3">Current Location</th>
+                                            <th class="py-2.5 px-3 text-center">Start Time</th>
+                                            <th class="py-2.5 px-3 text-center">Time Spent</th>
+                                            <th class="py-2.5 px-3">Route Progress</th>
+                                            <th class="py-2.5 px-3 text-right">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="telemetry-table-body" class="divide-y divide-slate-100 dark:divide-slate-800 font-semibold text-slate-700 dark:text-slate-300">
+                                        <!-- Row 1 -->
+                                        <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
+                                            <td class="py-3 px-3 font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+                                                <span class="w-2 h-2 rounded-full bg-brand-active"></span>
+                                                GJ-05-AB-1234
+                                            </td>
+                                            <td class="py-3 px-3">Ramesh Kumar</td>
+                                            <td class="py-3 px-3 text-slate-500 dark:text-slate-400">Ward 10, Main Road</td>
+                                            <td class="py-3 px-3 text-center text-slate-500 dark:text-slate-450">08:00 AM</td>
+                                            <td class="py-3 px-3 text-center text-slate-500 dark:text-slate-450">2h 45m</td>
+                                            <td class="py-3 px-3">
+                                                <div class="flex items-center gap-2">
+                                                    <div class="w-16 bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                                                        <div id="prog-ab-bar" class="bg-emerald-500 h-full rounded-full transition-all duration-1000" style="width: 75%"></div>
+                                                    </div>
+                                                    <span id="prog-ab-txt" class="font-extrabold text-[10px] text-slate-800 dark:text-slate-200">75%</span>
+                                                </div>
+                                            </td>
+                                            <td class="py-3 px-3 text-right">
+                                                <button onclick="clickMapNode('ab')" class="px-2 py-1 text-[10px] font-black text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/20 hover:bg-emerald-100 dark:hover:bg-emerald-950/50 rounded border border-emerald-100 dark:border-emerald-900 transition-colors">View Map</button>
+                                            </td>
+                                        </tr>
+                                        <!-- Row 2 -->
+                                        <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
+                                            <td class="py-3 px-3 font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+                                                <span class="w-2 h-2 rounded-full bg-brand-idle"></span>
+                                                GJ-05-CD-5678
+                                            </td>
+                                            <td class="py-3 px-3">Suresh Patel</td>
+                                            <td class="py-3 px-3 text-slate-500 dark:text-slate-400">Ward 12, Market Road</td>
+                                            <td class="py-3 px-3 text-center text-slate-500 dark:text-slate-450">08:10 AM</td>
+                                            <td class="py-3 px-3 text-center text-slate-500 dark:text-slate-450">2h 15m</td>
+                                            <td class="py-3 px-3">
+                                                <div class="flex items-center gap-2">
+                                                    <div class="w-16 bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                                                        <div id="prog-cd-bar" class="bg-amber-500 h-full rounded-full transition-all duration-1000" style="width: 45%"></div>
+                                                    </div>
+                                                    <span id="prog-cd-txt" class="font-extrabold text-[10px] text-slate-800 dark:text-slate-200">45%</span>
+                                                </div>
+                                            </td>
+                                            <td class="py-3 px-3 text-right">
+                                                <button onclick="clickMapNode('cd')" class="px-2 py-1 text-[10px] font-black text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/20 hover:bg-amber-100 dark:hover:bg-amber-950/50 rounded border border-amber-100 dark:border-amber-900 transition-colors">View Map</button>
+                                            </td>
+                                        </tr>
+                                        <!-- Row 3 -->
+                                        <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
+                                            <td class="py-3 px-3 font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+                                                <span class="w-2 h-2 rounded-full bg-brand-stopped animate-pulse"></span>
+                                                GJ-05-HI-9012
+                                            </td>
+                                            <td class="py-3 px-3">Mahesh Jani</td>
+                                            <td class="py-3 px-3 text-slate-500 dark:text-slate-400">Ward 15, Park Road</td>
+                                            <td class="py-3 px-3 text-center text-slate-500 dark:text-slate-450">08:05 AM</td>
+                                            <td class="py-3 px-3 text-center text-slate-500 dark:text-slate-450">1h 20m</td>
+                                            <td class="py-3 px-3">
+                                                <div class="flex items-center gap-2">
+                                                    <div class="w-16 bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                                                        <div id="prog-hi-bar" class="bg-rose-500 h-full rounded-full transition-all duration-1000" style="width: 30%"></div>
+                                                    </div>
+                                                    <span id="prog-hi-txt" class="font-extrabold text-[10px] text-slate-800 dark:text-slate-200">30%</span>
+                                                </div>
+                                            </td>
+                                            <td class="py-3 px-3 text-right">
+                                                <button onclick="clickMapNode('hi')" class="px-2 py-1 text-[10px] font-black text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/20 hover:bg-rose-100 dark:hover:bg-rose-950/50 rounded border border-rose-100 dark:border-rose-900 transition-colors">View Map</button>
+                                            </td>
+                                        </tr>
+                                        <!-- Row 4 -->
+                                        <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
+                                            <td class="py-3 px-3 font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+                                                <span class="w-2 h-2 rounded-full bg-brand-active"></span>
+                                                GJ-05-EF-3456
+                                            </td>
+                                            <td class="py-3 px-3">Jay Sharma</td>
+                                            <td class="py-3 px-3 text-slate-500 dark:text-slate-400">Ward 14, School Road</td>
+                                            <td class="py-3 px-3 text-center text-slate-500 dark:text-slate-450">08:20 AM</td>
+                                            <td class="py-3 px-3 text-center text-slate-500 dark:text-slate-450">1h 50m</td>
+                                            <td class="py-3 px-3">
+                                                <div class="flex items-center gap-2">
+                                                    <div class="w-16 bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                                                        <div id="prog-ef-bar" class="bg-emerald-500 h-full rounded-full transition-all duration-1000" style="width: 60%"></div>
+                                                    </div>
+                                                    <span id="prog-ef-txt" class="font-extrabold text-[10px] text-slate-800 dark:text-slate-200">60%</span>
+                                                </div>
+                                            </td>
+                                            <td class="py-3 px-3 text-right">
+                                                <button onclick="clickMapNode('ef')" class="px-2 py-1 text-[10px] font-black text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/20 hover:bg-emerald-100 dark:hover:bg-emerald-950/50 rounded border border-emerald-100 dark:border-emerald-900 transition-colors">View Map</button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- LIVE MAP VIEW TAB (TAB 2) -->
+                <div id="tab-tracking-view" class="hidden space-y-6">
+                    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-6 shadow-sm transition-colors duration-200">
+                        <div class="flex items-center justify-between mb-4 pb-2 border-b dark:border-slate-800">
+                            <h3 class="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2"><i class="fa-solid fa-map-location-dot text-emerald-600"></i> Advanced Real-time Map Control</h3>
+                            <button onclick="alertNotification('Exporting GPS flight log paths...')" class="bg-slate-900 dark:bg-slate-800 text-white text-xs px-3 py-1.5 rounded-lg font-bold"><i class="fa-solid fa-download"></i> Export GPS Logs</button>
+                        </div>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">View geo-fencing borders, telemetry direction lines, traffic and road condition parameters of Wards 10-16.</p>
+                        
+                        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                            <!-- Left Mini controls -->
+                            <div class="lg:col-span-4 space-y-3">
+                                <div class="p-3 bg-slate-50 dark:bg-slate-850 border dark:border-slate-800 rounded-xl">
+                                    <h4 class="text-xs font-black uppercase text-slate-600 dark:text-slate-400 mb-2">Map Layers</h4>
+                                    <div class="space-y-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                        <label class="flex items-center gap-2"><input type="checkbox" checked class="rounded accent-emerald-600"> Municipal Ward Boundaries</label>
+                                        <label class="flex items-center gap-2"><input type="checkbox" checked class="rounded accent-emerald-600"> GPS Route Trails</label>
+                                        <label class="flex items-center gap-2"><input type="checkbox" checked class="rounded accent-emerald-600"> Landmarks and Hazards</label>
+                                        <label class="flex items-center gap-2"><input type="checkbox" class="rounded accent-emerald-600"> Citizens Smart Bin Nodes</label>
+                                    </div>
+                                </div>
+                                <div class="p-3 bg-slate-50 dark:bg-slate-850 border dark:border-slate-800 rounded-xl">
+                                    <h4 class="text-xs font-black uppercase text-slate-600 dark:text-slate-400 mb-2">Live Geo-fencing Alerts</h4>
+                                    <div class="space-y-1.5 text-[11px] text-slate-700 dark:text-slate-300">
+                                        <div class="flex items-center gap-1.5 text-rose-600 font-bold"><i class="fa-solid fa-shield-halved"></i> GJ-05-AB out of Ward 10 sector (Mock)</div>
+                                        <div class="flex items-center gap-1.5 text-slate-500 dark:text-slate-400"><i class="fa-solid fa-circle-check text-emerald-500"></i> Ward 14 clear from alerts</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="lg:col-span-8 bg-slate-100 dark:bg-slate-950 h-[380px] rounded-xl flex items-center justify-center border dark:border-slate-800 text-slate-400 font-bold relative overflow-hidden">
+                                <div class="absolute inset-0 bg-slate-50 dark:bg-slate-900 p-6 flex flex-col justify-between">
+                                    <div class="flex items-center gap-2 text-slate-800 dark:text-slate-100 text-sm font-bold border-b dark:border-slate-800 pb-2">
+                                        <i class="fa-solid fa-location-crosshairs text-emerald-600 animate-spin-slow"></i>
+                                        <span>Focusing Fleet Map Stream...</span>
+                                    </div>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400 italic">Please use the Live Map in the core Dashboard grid module for interactive vehicle path selection, as both coordinates are synced dynamically.</p>
+                                    <div class="bg-white dark:bg-slate-850 p-3 rounded-lg border border-slate-200 dark:border-slate-800">
+                                        <div class="flex justify-between text-xs font-extrabold text-slate-700 dark:text-slate-300 mb-1">
+                                            <span>Simulated Latency</span>
+                                            <span>4ms</span>
+                                        </div>
+                                        <div class="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                                            <div class="bg-emerald-500 h-full w-[95%]"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VEHICLES PAGE (TAB 3) -->
+                <div id="tab-vehicles-view" class="hidden space-y-6">
+                    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-6 shadow-sm transition-colors duration-200">
+                        <div class="flex items-center justify-between mb-4 border-b dark:border-slate-800 pb-3">
+                            <h3 class="text-base font-bold text-slate-900 dark:text-slate-100"><i class="fa-solid fa-truck text-emerald-600"></i> Municipality Active Fleet Details</h3>
+                            <button onclick="alertNotification('Adding simulated Vehicle registration record...')" class="bg-emerald-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 hover:bg-emerald-500 transition-colors"><i class="fa-solid fa-plus"></i> Add Vehicle</button>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-xs font-semibold">
+                            <!-- Vehicle Card 1 -->
+                            <div class="p-4 bg-slate-50 dark:bg-slate-850 border dark:border-slate-800 rounded-xl">
+                                <div class="flex justify-between items-start mb-2">
+                                    <span class="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-400 rounded font-bold uppercase text-[9px]">On Route</span>
+                                    <span class="text-[10px] text-slate-400">ID: V-101</span>
+                                </div>
+                                <h4 class="text-sm font-bold text-slate-900 dark:text-slate-100">GJ-05-AB-1234</h4>
+                                <p class="text-[11px] text-slate-500 dark:text-slate-400 mb-3">Capacity: 8 Ton | Tata Tipper</p>
+                                <div class="space-y-1 text-slate-700 dark:text-slate-300 text-[11px] border-t dark:border-slate-800 pt-2">
+                                    <div><span class="text-slate-400">Driver:</span> Ramesh Kumar</div>
+                                    <div><span class="text-slate-400">Fuel Level:</span> 68% (Diesel)</div>
+                                    <div><span class="text-slate-400">Insurance:</span> Active until Oct 2026</div>
+                                </div>
+                            </div>
+                            <!-- Vehicle Card 2 -->
+                            <div class="p-4 bg-slate-50 dark:bg-slate-850 border dark:border-slate-800 rounded-xl">
+                                <div class="flex justify-between items-start mb-2">
+                                    <span class="px-2 py-0.5 bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-400 rounded font-bold uppercase text-[9px]">Slow/Idle</span>
+                                    <span class="text-[10px] text-slate-400">ID: V-102</span>
+                                </div>
+                                <h4 class="text-sm font-bold text-slate-900 dark:text-slate-100">GJ-05-CD-5678</h4>
+                                <p class="text-[11px] text-slate-500 dark:text-slate-400 mb-3">Capacity: 6 Ton | Ashok Leyland</p>
+                                <div class="space-y-1 text-slate-700 dark:text-slate-300 text-[11px] border-t dark:border-slate-800 pt-2">
+                                    <div><span class="text-slate-400">Driver:</span> Suresh Patel</div>
+                                    <div><span class="text-slate-400">Fuel Level:</span> 42% (Diesel)</div>
+                                    <div><span class="text-slate-400">Insurance:</span> Active until Dec 2026</div>
+                                </div>
+                            </div>
+                            <!-- Vehicle Card 3 -->
+                            <div class="p-4 bg-slate-50 dark:bg-slate-850 border dark:border-slate-800 rounded-xl">
+                                <div class="flex justify-between items-start mb-2">
+                                    <span class="px-2 py-0.5 bg-rose-100 dark:bg-rose-950/50 text-rose-800 dark:text-rose-400 rounded font-bold uppercase text-[9px]">Stopped</span>
+                                    <span class="text-[10px] text-slate-400">ID: V-103</span>
+                                </div>
+                                <h4 class="text-sm font-bold text-slate-900 dark:text-slate-100">GJ-05-HI-9012</h4>
+                                <p class="text-[11px] text-slate-500 dark:text-slate-400 mb-3">Capacity: 10 Ton | Mahindra Dumper</p>
+                                <div class="space-y-1 text-slate-700 dark:text-slate-300 text-[11px] border-t dark:border-slate-800 pt-2">
+                                    <div><span class="text-slate-400">Driver:</span> Mahesh Jani</div>
+                                    <div><span class="text-slate-400">Fuel Level:</span> 85% (Diesel)</div>
+                                    <div><span class="text-slate-400">Insurance:</span> Pending Service</div>
+                                </div>
+                            </div>
+                            <!-- Vehicle Card 4 -->
+                            <div class="p-4 bg-slate-50 dark:bg-slate-850 border dark:border-slate-800 rounded-xl">
+                                <div class="flex justify-between items-start mb-2">
+                                    <span class="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-400 rounded font-bold uppercase text-[9px]">On Route</span>
+                                    <span class="text-[10px] text-slate-400">ID: V-104</span>
+                                </div>
+                                <h4 class="text-sm font-bold text-slate-900 dark:text-slate-100">GJ-05-EF-3456</h4>
+                                <p class="text-[11px] text-slate-500 dark:text-slate-400 mb-3">Capacity: 8 Ton | Eicher Pro</p>
+                                <div class="space-y-1 text-slate-700 dark:text-slate-300 text-[11px] border-t dark:border-slate-800 pt-2">
+                                    <div><span class="text-slate-400">Driver:</span> Jay Sharma</div>
+                                    <div><span class="text-slate-400">Fuel Level:</span> 90% (Diesel)</div>
+                                    <div><span class="text-slate-400">Insurance:</span> Active until Jan 2027</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- WORKERS MANAGEMENT VIEW (TAB 4) -->
+                <div id="tab-workers-view" class="hidden space-y-6">
+                    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-6 shadow-sm transition-colors duration-200">
+                        <div class="flex items-center justify-between mb-4 border-b dark:border-slate-800 pb-3">
+                            <h3 class="text-base font-bold text-slate-900 dark:text-slate-100"><i class="fa-solid fa-users-gear text-emerald-600"></i> Worker Management & Verification</h3>
+                            <button onclick="alertNotification('Triggering worker checklist backup...')" class="bg-slate-900 dark:bg-slate-800 text-white text-xs font-bold px-3 py-1.5 rounded-lg">Export Attendance</button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs font-semibold">
+                                <thead>
+                                    <tr class="text-slate-400 dark:text-slate-500 border-b dark:border-slate-800">
+                                        <th class="py-2.5">Worker Name</th>
+                                        <th class="py-2.5">ID Number</th>
+                                        <th class="py-2.5">Verification Method</th>
+                                        <th class="py-2.5">Check-In Time</th>
+                                        <th class="py-2.5">Shift Duty</th>
+                                        <th class="py-2.5">Rating / Efficiency</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y dark:divide-slate-800 text-slate-700 dark:text-slate-300">
+                                    <tr>
+                                        <td class="py-3 font-bold text-slate-900 dark:text-slate-100">Ramesh Kumar</td>
+                                        <td class="py-3">W-9901</td>
+                                        <td class="py-3 text-emerald-600 dark:text-emerald-400"><span class="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-950/50 rounded text-[10px] font-black uppercase">QR Scan Verified</span></td>
+                                        <td class="py-3">07:55 AM</td>
+                                        <td class="py-3">Morning Shift (8h)</td>
+                                        <td class="py-3 text-emerald-600 dark:text-emerald-400"><i class="fa-solid fa-star"></i> 4.9</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="py-3 font-bold text-slate-900 dark:text-slate-100">Suresh Patel</td>
+                                        <td class="py-3">W-9902</td>
+                                        <td class="py-3 text-emerald-600 dark:text-emerald-400"><span class="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-950/50 rounded text-[10px] font-black uppercase">Face Verification</span></td>
+                                        <td class="py-3">08:02 AM</td>
+                                        <td class="py-3">Morning Shift (8h)</td>
+                                        <td class="py-3 text-emerald-600 dark:text-emerald-400"><i class="fa-solid fa-star"></i> 4.7</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="py-3 font-bold text-slate-900 dark:text-slate-100">Mahesh Jani</td>
+                                        <td class="py-3">W-9903</td>
+                                        <td class="py-3 text-rose-500 dark:text-rose-400"><span class="px-2 py-0.5 bg-rose-100 dark:bg-rose-950/50 rounded text-[10px] font-black uppercase">GPS Manual Checkin</span></td>
+                                        <td class="py-3">08:05 AM</td>
+                                        <td class="py-3">Morning Shift (8h)</td>
+                                        <td class="py-3 text-amber-500 dark:text-amber-400"><i class="fa-solid fa-star"></i> 3.2</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="py-3 font-bold text-slate-900 dark:text-slate-100">Jay Sharma</td>
+                                        <td class="py-3">W-9904</td>
+                                        <td class="py-3 text-emerald-600 dark:text-emerald-400"><span class="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-950/50 rounded text-[10px] font-black uppercase">Face Verification</span></td>
+                                        <td class="py-3">08:15 AM</td>
+                                        <td class="py-3">Morning Shift (8h)</td>
+                                        <td class="py-3 text-emerald-600 dark:text-emerald-400"><i class="fa-solid fa-star"></i> 4.8</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ATTENDANCE MONITORING PAGE (TAB 4.5) -->
+                <div id="tab-attendance-view" class="hidden space-y-6">
+                    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                        <!-- KPI card list -->
+                        <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-4 rounded-2xl flex items-center gap-3 shadow-sm">
+                            <div class="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-lg"><i class="fa-solid fa-user-check"></i></div>
+                            <div>
+                                <p class="text-[10px] text-slate-400 uppercase font-extrabold">Active Today</p>
+                                <h4 class="text-lg font-bold text-slate-800 dark:text-slate-100">18 Workers</h4>
+                            </div>
+                        </div>
+                        <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-4 rounded-2xl flex items-center gap-3 shadow-sm">
+                            <div class="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center text-lg"><i class="fa-solid fa-business-time"></i></div>
+                            <div>
+                                <p class="text-[10px] text-slate-400 uppercase font-extrabold">Late Entry</p>
+                                <h4 class="text-lg font-bold text-slate-800 dark:text-slate-100">2 Marked</h4>
+                            </div>
+                        </div>
+                        <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-4 rounded-2xl flex items-center gap-3 shadow-sm">
+                            <div class="w-10 h-10 rounded-xl bg-violet-100 dark:bg-violet-950/40 text-violet-600 dark:text-violet-400 flex items-center justify-center text-lg"><i class="fa-solid fa-fingerprint"></i></div>
+                            <div>
+                                <p class="text-[10px] text-slate-400 uppercase font-extrabold">Biometrics Status</p>
+                                <h4 class="text-lg font-bold text-slate-800 dark:text-slate-100">100% Calibrated</h4>
+                            </div>
+                        </div>
+                        <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-4 rounded-2xl flex items-center gap-3 shadow-sm">
+                            <div class="w-10 h-10 rounded-xl bg-rose-100 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 flex items-center justify-center text-lg"><i class="fa-solid fa-circle-exclamation"></i></div>
+                            <div>
+                                <p class="text-[10px] text-slate-400 uppercase font-extrabold">Absent Flag</p>
+                                <h4 class="text-lg font-bold text-slate-800 dark:text-slate-100">0 Reported</h4>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Attendance Logs Table Container -->
+                    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-sm">
+                        <div class="flex flex-col md:flex-row md:items-center md:justify-between pb-3 border-b dark:border-slate-800 gap-3">
+                            <div>
+                                <h3 class="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider flex items-center gap-2">
+                                    <i class="fa-solid fa-list-check text-emerald-600"></i>
+                                    Verification Log System
+                                </h3>
+                                <p class="text-[11px] text-slate-400">Review worker verification types: Face Match, GPS Coordinates & Handheld scans.</p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button onclick="alertNotification('Initializing face recognition camera check...')" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs py-1.5 px-3 rounded-lg"><i class="fa-solid fa-video"></i> Start Verification Cam</button>
+                                <button onclick="alertNotification('Generating QR scanner active tags...')" class="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs py-1.5 px-3 rounded-lg"><i class="fa-solid fa-qrcode"></i> Generate QR Card</button>
+                            </div>
+                        </div>
+
+                        <div class="overflow-x-auto mt-4">
+                            <table class="w-full text-left text-xs font-semibold">
+                                <thead>
+                                    <tr class="text-slate-400 border-b dark:border-slate-800 text-[10px] uppercase">
+                                        <th class="py-2">Worker / Role</th>
+                                        <th class="py-2">Check-in Time</th>
+                                        <th class="py-2">Check-out Time</th>
+                                        <th class="py-2">Verification Channel</th>
+                                        <th class="py-2">Verification GPS Loc</th>
+                                        <th class="py-2 text-right">Verification Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y dark:divide-slate-800 text-slate-700 dark:text-slate-300">
+                                    <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
+                                        <td class="py-3">
+                                            <p class="font-bold text-slate-900 dark:text-white">Ramesh Kumar</p>
+                                            <p class="text-[10px] text-slate-400">Driver (Tata Tipper)</p>
+                                        </td>
+                                        <td class="py-3">07:55:12 AM</td>
+                                        <td class="py-3 text-slate-400">-- : --</td>
+                                        <td class="py-3"><span class="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 rounded-md font-bold text-[10px] uppercase">QR Card Scan</span></td>
+                                        <td class="py-3 text-slate-400 text-[10px]">21.1122 N, 72.8819 E (Ward 10)</td>
+                                        <td class="py-3 text-right text-emerald-600"><i class="fa-solid fa-circle-check"></i> Approved</td>
+                                    </tr>
+                                    <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
+                                        <td class="py-3">
+                                            <p class="font-bold text-slate-900 dark:text-white">Suresh Patel</p>
+                                            <p class="text-[10px] text-slate-400">Field Sweeper Crew</p>
+                                        </td>
+                                        <td class="py-3">08:02:44 AM</td>
+                                        <td class="py-3 text-slate-400">-- : --</td>
+                                        <td class="py-3"><span class="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 rounded-md font-bold text-[10px] uppercase">Face Bio ID</span></td>
+                                        <td class="py-3 text-slate-400 text-[10px]">21.1219 N, 72.8791 E (Ward 12)</td>
+                                        <td class="py-3 text-right text-emerald-600"><i class="fa-solid fa-circle-check"></i> Approved</td>
+                                    </tr>
+                                    <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
+                                        <td class="py-3">
+                                            <p class="font-bold text-slate-900 dark:text-white">Mahesh Jani</p>
+                                            <p class="text-[10px] text-slate-400">Dumper Supervisor</p>
+                                        </td>
+                                        <td class="py-3 text-amber-500">08:05:01 AM (Late)</td>
+                                        <td class="py-3 text-slate-400">-- : --</td>
+                                        <td class="py-3"><span class="px-2 py-0.5 bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400 rounded-md font-bold text-[10px] uppercase">GPS Ping App</span></td>
+                                        <td class="py-3 text-slate-400 text-[10px]">21.1105 N, 72.8902 E (Ward 15)</td>
+                                        <td class="py-3 text-right text-amber-500"><i class="fa-solid fa-circle-exclamation"></i> Flagged Audit</td>
+                                    </tr>
+                                    <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
+                                        <td class="py-3">
+                                            <p class="font-bold text-slate-900 dark:text-white">Jay Sharma</p>
+                                            <p class="text-[10px] text-slate-400">Route Operator</p>
+                                        </td>
+                                        <td class="py-3">08:15:30 AM</td>
+                                        <td class="py-3 text-slate-400">-- : --</td>
+                                        <td class="py-3"><span class="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 rounded-md font-bold text-[10px] uppercase">Face Bio ID</span></td>
+                                        <td class="py-3 text-slate-400 text-[10px]">21.1300 N, 72.8710 E (Ward 14)</td>
+                                        <td class="py-3 text-right text-emerald-600"><i class="fa-solid fa-circle-check"></i> Approved</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- REPORTS & ANALYTICS PAGE (TAB 4.6) -->
+                <div id="tab-reports-view" class="hidden space-y-6">
+                    <!-- Export options header layout -->
+                    <div class="bg-gradient-to-r from-emerald-600 to-emerald-800 text-white p-6 rounded-2xl shadow-sm flex flex-col md:flex-row md:items-center md:justify-between justify-between gap-4">
+                        <div>
+                            <h3 class="text-base font-black uppercase"><i class="fa-solid fa-chart-pie mr-1"></i> Global Analytics Engine</h3>
+                            <p class="text-xs text-emerald-100 mt-1">Select structured datasets, target periods, and export reports for regulatory bodies directly.</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="alertNotification('Compiling full PDF export...')" class="bg-white text-slate-900 hover:bg-slate-100 font-bold text-xs py-2 px-4 rounded-xl flex items-center gap-1.5 transition-all shadow-sm"><i class="fa-solid fa-file-pdf text-rose-500"></i> Export PDF</button>
+                            <button onclick="alertNotification('Formatting XML Spreadsheet format...')" class="bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-xs py-2 px-4 rounded-xl flex items-center gap-1.5 transition-all shadow-sm"><i class="fa-solid fa-file-excel"></i> Download Excel</button>
+                            <button onclick="alertNotification('Generating CSV records download...')" class="bg-emerald-900 hover:bg-emerald-800 text-white font-bold text-xs py-2 px-4 rounded-xl flex items-center gap-1.5 transition-all shadow-sm"><i class="fa-solid fa-file-csv"></i> Download CSV</button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+                        <!-- Left analytical cards -->
+                        <div class="xl:col-span-4 space-y-4">
+                            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-5 rounded-2xl shadow-sm">
+                                <h4 class="text-xs font-black uppercase text-slate-500 dark:text-slate-400 mb-3"><i class="fa-solid fa-medal text-amber-500"></i> Performance Achievements</h4>
+                                <div class="space-y-3 font-semibold text-xs text-slate-700 dark:text-slate-300">
+                                    <div class="flex justify-between border-b dark:border-slate-800 pb-2">
+                                        <span class="text-slate-400">Best Performing Truck:</span>
+                                        <span class="font-extrabold text-slate-900 dark:text-slate-100">GJ-05-AB-1234</span>
+                                    </div>
+                                    <div class="flex justify-between border-b dark:border-slate-800 pb-2">
+                                        <span class="text-slate-400">Best Operator:</span>
+                                        <span class="font-extrabold text-slate-900 dark:text-slate-100">Ramesh Kumar</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-slate-400">Most Complaint Area:</span>
+                                        <span class="font-extrabold text-rose-500">Ward 10 Sector-B</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Ward Clearance Chart layout using native Tailwind elements -->
+                            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-5 rounded-2xl shadow-sm">
+                                <h4 class="text-xs font-black uppercase text-slate-500 dark:text-slate-400 mb-3"><i class="fa-solid fa-chart-simple text-sky-500"></i> Area Ward Cleanliness Indexes</h4>
+                                <div class="space-y-3">
+                                    <div>
+                                        <div class="flex justify-between text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                                            <span>Ward 10 (Residential)</span>
+                                            <span>92% Cleanliness</span>
+                                        </div>
+                                        <div class="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                                            <div class="bg-emerald-500 h-full w-[92%]"></div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div class="flex justify-between text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                                            <span>Ward 12 (Market Sector)</span>
+                                            <span>74% Cleanliness</span>
+                                        </div>
+                                        <div class="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                                            <div class="bg-amber-500 h-full w-[74%]"></div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div class="flex justify-between text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                                            <span>Ward 15 (Industrial sector)</span>
+                                            <span>48% Cleanliness</span>
+                                        </div>
+                                        <div class="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                                            <div class="bg-rose-500 h-full w-[48%]"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right tabular operational audits -->
+                        <div class="xl:col-span-8 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-5 rounded-2xl shadow-sm">
+                            <h4 class="text-xs font-black uppercase text-slate-500 dark:text-slate-400 mb-3 border-b dark:border-slate-800 pb-2"><i class="fa-solid fa-list text-emerald-600"></i> Complete Daily Municipal Audits</h4>
+                            <div class="overflow-x-auto text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                <table class="w-full text-left">
+                                    <thead>
+                                        <tr class="text-slate-400 border-b dark:border-slate-800 text-[10px] uppercase">
+                                            <th class="py-2">Operational Date</th>
+                                            <th class="py-2">Distance Covered</th>
+                                            <th class="py-2">Active Staff</th>
+                                            <th class="py-2">Fuel Consumed</th>
+                                            <th class="py-2 text-right">Route Efficiency</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y dark:divide-slate-800">
+                                        <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
+                                            <td class="py-3 font-bold text-slate-900 dark:text-white">24 May 2024 (Today)</td>
+                                            <td class="py-3">84.6 km</td>
+                                            <td class="py-3">18 Active</td>
+                                            <td class="py-3">54.2 Liters</td>
+                                            <td class="py-3 text-right text-emerald-600 font-extrabold">94.8%</td>
+                                        </tr>
+                                        <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
+                                            <td class="py-3 font-bold text-slate-900 dark:text-white">23 May 2024</td>
+                                            <td class="py-3">82.1 km</td>
+                                            <td class="py-3">16 Active</td>
+                                            <td class="py-3">50.8 Liters</td>
+                                            <td class="py-3 text-right text-emerald-600 font-extrabold">92.1%</td>
+                                        </tr>
+                                        <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
+                                            <td class="py-3 font-bold text-slate-900 dark:text-white">22 May 2024</td>
+                                            <td class="py-3">79.5 km</td>
+                                            <td class="py-3">18 Active</td>
+                                            <td class="py-3">49.9 Liters</td>
+                                            <td class="py-3 text-right text-emerald-500 font-extrabold">89.4%</td>
+                                        </tr>
+                                        <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
+                                            <td class="py-3 font-bold text-slate-900 dark:text-white">21 May 2024</td>
+                                            <td class="py-3">86.4 km</td>
+                                            <td class="py-3">17 Active</td>
+                                            <td class="py-3">57.0 Liters</td>
+                                            <td class="py-3 text-right text-rose-500 font-extrabold">76.5% (Delay)</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ALERTS SYSTEM PAGE (TAB 5) -->
+                <div id="tab-alerts-view" class="hidden space-y-6">
+                    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-6 shadow-sm transition-colors duration-200">
+                        <div class="flex items-center justify-between mb-4 border-b dark:border-slate-800 pb-3">
+                            <h3 class="text-base font-bold text-slate-900 dark:text-slate-100"><i class="fa-solid fa-bell text-rose-500"></i> Full Operational Emergency Log</h3>
+                            <button onclick="triggerSOSalert()" class="bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs px-3 py-1.5 rounded-lg flex items-center gap-1"><i class="fa-solid fa-radiation animate-spin"></i> Trigger Simulated SOS</button>
+                        </div>
+                        <div class="space-y-2">
+                            <!-- Alert 1 -->
+                            <div class="p-3 bg-rose-50 dark:bg-rose-950/10 border border-rose-100 dark:border-rose-900/40 rounded-xl flex justify-between items-center text-xs text-rose-900 dark:text-rose-300">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-rose-600 animate-ping"></span>
+                                    <span class="font-bold">Vehicle GJ-05-AB-1234 stopped more than 20 min</span>
+                                </div>
+                                <span class="text-slate-450 dark:text-slate-500">10:42 AM | Ward 10</span>
+                            </div>
+                            <!-- Alert 2 -->
+                            <div class="p-3 bg-amber-50 dark:bg-amber-950/10 border border-amber-100 dark:border-amber-900/40 rounded-xl flex justify-between items-center text-xs text-amber-900 dark:text-amber-300">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                                    <span class="font-bold">Route deviation in Ward 12</span>
+                                </div>
+                                <span class="text-slate-450 dark:text-slate-500">10:35 AM | Ward 12</span>
+                            </div>
+                            <!-- Alert 3 -->
+                            <div class="p-3 bg-amber-50 dark:bg-amber-950/10 border border-amber-100 dark:border-amber-900/40 rounded-xl flex justify-between items-center text-xs text-amber-900 dark:text-amber-300">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                                    <span class="font-bold">Vehicle GJ-05-CD-5678 idle for more than 10 min</span>
+                                </div>
+                                <span class="text-slate-450 dark:text-slate-500">10:28 AM | Ward 12</span>
+                            </div>
+                            <!-- Alert 4 -->
+                            <div class="p-3 bg-sky-50 dark:bg-sky-950/10 border border-sky-100 dark:border-sky-900/40 rounded-xl flex justify-between items-center text-xs text-sky-900 dark:text-sky-300">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-sky-500"></span>
+                                    <span class="font-bold">Area coverage pending in Ward 15</span>
+                                </div>
+                                <span class="text-slate-450 dark:text-slate-500">10:20 AM | Ward 15</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- COMPLAINTS TAB (TAB 6) -->
+                <div id="tab-complaints-view" class="hidden space-y-6">
+                    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-6 shadow-sm transition-colors duration-200">
+                        <div class="flex items-center justify-between mb-4 border-b dark:border-slate-800 pb-3">
+                            <h3 class="text-base font-bold text-slate-900 dark:text-slate-100"><i class="fa-solid fa-comments text-emerald-600"></i> Citizen Complaints Desk & Feedback Panel</h3>
+                            <button onclick="alertNotification('Opening New Citizen Complain Registry...')" class="bg-emerald-600 text-white text-xs px-3 py-1.5 rounded-lg font-bold">Register Complaint</button>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs mb-6">
+                            <div class="p-4 bg-emerald-50 dark:bg-emerald-950/20 rounded-xl text-center">
+                                <div class="text-lg font-bold text-slate-900 dark:text-slate-100">92%</div>
+                                <div class="text-slate-500 dark:text-slate-400 mt-1">Citizen Satisfaction Index</div>
+                            </div>
+                            <div class="p-4 bg-amber-50 dark:bg-amber-950/20 rounded-xl text-center">
+                                <div class="text-lg font-bold text-slate-900 dark:text-slate-100">4 Complaints</div>
+                                <div class="text-slate-500 dark:text-slate-400 mt-1">Pending Resolution Today</div>
+                            </div>
+                            <div class="p-4 bg-sky-50 dark:bg-sky-950/20 rounded-xl text-center">
+                                <div class="text-lg font-bold text-slate-900 dark:text-slate-100">18 min</div>
+                                <div class="text-slate-500 dark:text-slate-400 mt-1">Average Response Time</div>
+                            </div>
+                        </div>
+                        <div class="space-y-3 font-semibold text-xs text-slate-700 dark:text-slate-300">
+                            <!-- Complaint Item -->
+                            <div class="p-3 bg-slate-50 dark:bg-slate-850 rounded-xl border dark:border-slate-800 flex items-center justify-between">
+                                <div>
+                                    <span class="px-2 py-0.5 bg-rose-100 dark:bg-rose-950/50 text-rose-800 dark:text-rose-400 rounded font-bold text-[9px] uppercase mr-2">Garbage skipped</span>
+                                    <span>Ward 10 - Block G Commercial sector skipped trash pickup</span>
+                                </div>
+                                <button onclick="alertNotification('Assigning truck backup to Ward 10 Block G...')" class="px-2.5 py-1 text-[11px] bg-slate-900 dark:bg-slate-800 text-white font-bold rounded hover:bg-slate-800">Dispatch Truck</button>
+                            </div>
+                            <!-- Complaint Item 2 -->
+                            <div class="p-3 bg-slate-50 dark:bg-slate-850 rounded-xl border dark:border-slate-800 flex items-center justify-between">
+                                <div>
+                                    <span class="px-2 py-0.5 bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-400 rounded font-bold text-[9px] uppercase mr-2">Overflowing bin</span>
+                                    <span>Ward 15 - City Park perimeter garbage bin overflow hazard</span>
+                                </div>
+                                <span class="text-slate-400 dark:text-slate-500 font-bold">Dispatched</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ADMIN MANAGEMENT TAB (TAB 6.5) -->
+                <div id="tab-admin-view" class="hidden space-y-6">
+                    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-6 shadow-sm transition-colors duration-200">
+                        <div class="flex items-center justify-between mb-4 border-b dark:border-slate-800 pb-3">
+                            <h3 class="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                                <i class="fa-solid fa-user-shield text-emerald-600"></i>
+                                Admin Management & System Permissions
+                            </h3>
+                            <button onclick="alertNotification('Saving administrative override controls...')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-3 py-1.5 rounded-lg font-bold">Save System Access Matrix</button>
+                        </div>
+                        <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                            <!-- Left: Admin Profile details -->
+                            <div class="space-y-4">
+                                <div class="p-4 bg-slate-50 dark:bg-slate-850 border dark:border-slate-800 rounded-xl">
+                                    <h4 class="text-xs font-black uppercase text-slate-500 dark:text-slate-400 mb-3 flex items-center gap-1.5"><i class="fa-solid fa-address-card"></i> Active Administrator Account</h4>
+                                    <div class="flex items-center gap-3 mb-4">
+                                        <img class="w-12 h-12 rounded-xl border border-slate-300 dark:border-slate-700 shadow-sm" src="https://placehold.co/100x100/10B981/ffffff?text=AD" alt="Admin Profile">
+                                        <div>
+                                            <h5 class="text-sm font-bold text-slate-900 dark:text-slate-100">Director Harrison</h5>
+                                            <p class="text-xs text-emerald-600 dark:text-emerald-500 font-bold">Chief Operations Officer</p>
+                                        </div>
+                                    </div>
+                                    <div class="space-y-2 text-xs text-slate-700 dark:text-slate-300 border-t dark:border-slate-800 pt-3">
+                                        <div class="flex justify-between"><span class="text-slate-400">Security Clearance:</span> <span class="font-extrabold text-slate-900 dark:text-slate-100">Level 5 (Super Admin)</span></div>
+                                        <div class="flex justify-between"><span class="text-slate-400">Last Login:</span> <span class="font-semibold text-slate-500 dark:text-slate-400">Today, 10:41 AM</span></div>
+                                        <div class="flex justify-between"><span class="text-slate-400">Authorized IP:</span> <span class="font-mono text-[10px]">192.168.1.144</span></div>
+                                    </div>
+                                </div>
+                                <div class="p-4 bg-slate-50 dark:bg-slate-850 border dark:border-slate-800 rounded-xl">
+                                    <h4 class="text-xs font-black uppercase text-slate-500 dark:text-slate-400 mb-3 flex items-center gap-1.5"><i class="fa-solid fa-shield-halved"></i> Global Security Parameters</h4>
+                                    <div class="space-y-2 text-xs text-slate-700 dark:text-slate-300">
+                                        <div class="flex justify-between items-center"><span class="text-slate-400">Two-Factor Auth:</span> <span class="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 rounded-md font-bold text-[10px] uppercase">Enforced</span></div>
+                                        <div class="flex justify-between items-center"><span class="text-slate-400">Encryption Method:</span> <span class="font-bold">AES-256 Bit SSL</span></div>
+                                        <div class="flex justify-between items-center"><span class="text-slate-400">Database Engine:</span> <span class="text-emerald-600 dark:text-emerald-500 font-bold">Optimal (12ms Latency)</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Center: Permissions Matrix Checklist -->
+                            <div class="p-4 bg-slate-50 dark:bg-slate-850 border dark:border-slate-800 rounded-xl">
+                                <h4 class="text-xs font-black uppercase text-slate-500 dark:text-slate-400 mb-3 flex items-center gap-1.5"><i class="fa-solid fa-user-lock"></i> Access Privilege Matrix</h4>
+                                <p class="text-[11px] text-slate-400 mb-4">Toggle role privileges across the entire command grid for dynamic personnel assignments.</p>
+                                <div class="space-y-3 text-xs font-semibold text-slate-800 dark:text-slate-200">
+                                    <label class="flex items-center justify-between p-2 hover:bg-white dark:hover:bg-slate-800 rounded-lg cursor-pointer transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-700">
+                                        <span class="flex items-center gap-2"><i class="fa-solid fa-truck text-slate-400"></i> Add / Edit Fleet Vehicles</span>
+                                        <input type="checkbox" checked class="rounded accent-emerald-600 w-4 h-4">
+                                    </label>
+                                    <label class="flex items-center justify-between p-2 hover:bg-white dark:hover:bg-slate-800 rounded-lg cursor-pointer transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-700">
+                                        <span class="flex items-center gap-2"><i class="fa-solid fa-user-plus text-slate-400"></i> Add / Delete Worker Accounts</span>
+                                        <input type="checkbox" checked class="rounded accent-emerald-600 w-4 h-4">
+                                    </label>
+                                    <label class="flex items-center justify-between p-2 hover:bg-white dark:hover:bg-slate-800 rounded-lg cursor-pointer transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-700">
+                                        <span class="flex items-center gap-2"><i class="fa-solid fa-earth-asia text-slate-400"></i> Modify Geographic Ward Area Borders</span>
+                                        <input type="checkbox" checked class="rounded accent-emerald-600 w-4 h-4">
+                                    </label>
+                                    <label class="flex items-center justify-between p-2 hover:bg-white dark:hover:bg-slate-800 rounded-lg cursor-pointer transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-700">
+                                        <span class="flex items-center gap-2"><i class="fa-solid fa-file-export text-slate-400"></i> Download & Export Reports</span>
+                                        <input type="checkbox" checked class="rounded accent-emerald-600 w-4 h-4">
+                                    </label>
+                                    <label class="flex items-center justify-between p-2 hover:bg-white dark:hover:bg-slate-800 rounded-lg cursor-pointer transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-700">
+                                        <span class="flex items-center gap-2"><i class="fa-solid fa-headset text-slate-400"></i> Resolve Citizen Complaints Desk</span>
+                                        <input type="checkbox" checked class="rounded accent-emerald-600 w-4 h-4">
+                                    </label>
+                                </div>
+                            </div>
+                            <!-- Right: System Settings override inside Admin -->
+                            <div class="p-4 bg-slate-50 dark:bg-slate-850 border dark:border-slate-800 rounded-xl space-y-4">
+                                <div>
+                                    <h4 class="text-xs font-black uppercase text-slate-500 dark:text-slate-400 mb-3 flex items-center gap-1.5"><i class="fa-solid fa-gears"></i> Central Interface Overrides</h4>
+                                    <div class="space-y-3 text-xs">
+                                        <div>
+                                            <label class="block text-slate-400 mb-1">Global GPS Server Destination URL</label>
+                                            <input type="text" class="w-full bg-white dark:bg-slate-800 p-2 rounded-lg border dark:border-slate-700 dark:text-slate-100 font-mono text-[10px]" value="https://telemetry-gateway.municipality.gov" disabled>
+                                        </div>
+                                        <div>
+                                            <label class="block text-slate-400 mb-1">System Backup Trigger</label>
+                                            <button onclick="alertNotification('Compiling SQL database backups...')" class="w-full py-2 bg-slate-900 dark:bg-slate-800 text-white font-bold rounded-lg hover:bg-slate-800 dark:hover:bg-slate-700 transition-all flex items-center justify-center gap-1.5"><i class="fa-solid fa-database text-amber-500"></i> Run Emergency Database Backup</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="p-3 bg-amber-50/50 dark:bg-amber-950/15 border border-amber-200/50 dark:border-amber-900/50 rounded-xl text-xs text-amber-900 dark:text-amber-300">
+                                    <div class="flex items-center gap-1.5 font-bold mb-1"><i class="fa-solid fa-triangle-exclamation"></i> Security Warning</div>
+                                    <span>Changing security clearance level matrix locks out junior operators immediately until re-authenticated.</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SETTINGS TAB (TAB 7) -->
+                <div id="tab-settings-view" class="hidden space-y-6">
+                    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-6 shadow-sm transition-colors duration-200">
+                        <h3 class="text-base font-bold text-slate-900 dark:text-slate-100 border-b dark:border-slate-800 pb-3 mb-4"><i class="fa-solid fa-sliders text-emerald-600"></i> Global Settings & Control Options</h3>
+                        <div class="space-y-4 max-w-md text-xs font-semibold">
+                            <div>
+                                <label class="block text-slate-500 dark:text-slate-400 mb-1">GPS Telemetry Refresh Interval</label>
+                                <select class="w-full bg-slate-50 dark:bg-slate-800 p-2 rounded-lg border dark:border-slate-700 dark:text-slate-100">
+                                    <option>30 seconds (Default)</option>
+                                    <option>10 seconds</option>
+                                    <option>60 seconds</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-slate-500 dark:text-slate-400 mb-1">Emergency Push Notifications</label>
+                                <label class="flex items-center gap-2 mt-1"><input type="checkbox" checked class="rounded accent-emerald-600"> Enable SMS dispatcher triggers</label>
+                            </div>
+                            <div>
+                                <label class="block text-slate-500 dark:text-slate-400 mb-1">Map Visualization Style</label>
+                                <label class="flex items-center gap-2 mt-1"><input type="radio" name="map_style" checked> Light Vector Terrain Layout</label>
+                                <label class="flex items-center gap-2 mt-0.5"><input type="radio" name="map_style"> High-Contrast Ward Boundary Scheme</label>
+                            </div>
+                            <button onclick="alertNotification('Settings configurations successfully saved.')" class="bg-slate-900 dark:bg-slate-800 text-white font-bold py-2 px-4 rounded-xl shadow hover:bg-slate-800 transition-colors">Save Configurations</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Notification Popup Area -->
+            <div id="custom-notification" class="fixed top-4 right-4 z-50 transform translate-y-[-150%] transition-transform duration-300 bg-slate-900 dark:bg-slate-950 text-white py-3.5 px-5 rounded-2xl shadow-2xl flex items-center gap-3 max-w-sm border border-slate-800">
+                <div class="w-7 h-7 rounded-full bg-emerald-500 flex items-center justify-center text-white text-xs">
+                    <i class="fa-solid fa-bell"></i>
+                </div>
+                <div>
+                    <h5 class="text-xs font-black" id="notif-title">System Alert</h5>
+                    <p class="text-[11px] text-slate-300 font-medium mt-0.5" id="notif-text">Description detail text.</p>
+                </div>
+            </div>
+
+            <!-- System Status Footer Banner -->
+            <footer class="flex items-center justify-between px-6 py-3 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 text-[11px] font-semibold text-slate-500 dark:text-slate-400 transition-colors duration-200">
+                <div class="flex items-center gap-2">
+                    <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <i class="fa-solid fa-circle-info text-slate-400"></i>
+                    <span>Tip: Click on any vehicle on the map to see full details and route trace.</span>
+                </div>
+                <div class="flex items-center gap-1 text-slate-400 dark:text-slate-500">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    <span>MUNICIPALITY CONTROL PANEL v2.4</span>
+                </div>
+            </footer>
+
+        </main>
+    </div>
+
+    <script>
+        // Global variables state
+        let isSimulating = false;
+        let simInterval = null;
+        let countdownTimer = 30;
+        let countdownInterval = null;
+
+        // Custom Simulated Vehicle Datastore for high-fidelity interaction
+        const vehicleState = {
+            'ab': {
+                id: 'GJ-05-AB-1234',
+                driver: 'Ramesh Kumar',
+                location: 'Ward 10, Main Road',
+                speed: '24 km/h',
+                progress: 75,
+                pos: { x: 40, y: 42 }
+            },
+            'cd': {
+                id: 'GJ-05-CD-5678',
+                driver: 'Suresh Patel',
+                location: 'Ward 12, Market Road',
+                speed: '4 km/h',
+                progress: 45,
+                pos: { x: 65, y: 49 }
+            },
+            'hi': {
+                id: 'GJ-05-HI-9012',
+                driver: 'Mahesh Jani',
+                location: 'Ward 15, Park Road',
+                speed: '0 km/h',
+                progress: 30,
+                pos: { x: 81, y: 88 }
+            },
+            'ef': {
+                id: 'GJ-05-EF-3456',
+                driver: 'Jay Sharma',
+                location: 'Ward 14, School Road',
+                speed: '32 km/h',
+                progress: 60,
+                pos: { x: 20, y: 80 }
+            }
+        };
+
+        // Realtime Simulated Clock
+        function updateClock() {
+            const timeSpan = document.getElementById('live-time');
+            const now = new Date();
+            let hours = now.getHours();
+            let minutes = now.getMinutes();
+            let seconds = now.getSeconds();
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12;
+            hours = hours ? hours : 12; // 0 should be 12
+            minutes = minutes < 10 ? '0'+minutes : minutes;
+            seconds = seconds < 10 ? '0'+seconds : seconds;
+            if (timeSpan) {
+                timeSpan.innerText = hours + ':' + minutes + ':' + seconds + ' ' + ampm;
+            }
+        }
+
+        // Initialize dashboard state
+        function initDashboard() {
+            // Apply theme on load
+            const savedTheme = localStorage.getItem('theme');
+            const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            
+            if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
+                document.documentElement.classList.add('dark');
+                updateThemeToggleIcon(true);
+            } else {
+                document.documentElement.classList.remove('dark');
+                updateThemeToggleIcon(false);
+            }
+
+            // Start live clock
+            setInterval(updateClock, 1000);
+            updateClock();
+            
+            // Start the countdown timer for data refreshing simulations
+            startCountdown();
+        }
+
+        // Theme Toggling Logic
+        function toggleTheme() {
+            const isDarkNow = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', isDarkNow ? 'dark' : 'light');
+            updateThemeToggleIcon(isDarkNow);
+            alertNotification(
+                `Switched to ${isDarkNow ? 'Dark' : 'Light'} operational interface.`,
+                "Theme Updated"
+            );
+        }
+
+        function updateThemeToggleIcon(isDark) {
+            const icon = document.getElementById('theme-icon-indicator');
+            if (icon) {
+                if (isDark) {
+                    icon.className = "fa-solid fa-sun text-amber-500 transition-all duration-200";
+                } else {
+                    icon.className = "fa-solid fa-moon text-slate-700 transition-all duration-200";
+                }
+            }
+        }
+
+        // Timer controller
+        function startCountdown() {
+            clearInterval(countdownInterval);
+            countdownTimer = 30;
+            const timerText = document.getElementById('ref-timer-text');
+            countdownInterval = setInterval(() => {
+                countdownTimer--;
+                if (timerText) {
+                    timerText.innerText = `Auto sync: ${countdownTimer}s`;
+                }
+                if (countdownTimer <= 0) {
+                    countdownTimer = 30;
+                    simulateSyncPulse();
+                }
+            }, 1000);
+        }
+
+        // Multi-tab navigation system
+        function switchTab(tabId) {
+            // Hide all tab views
+            document.getElementById('tab-dashboard-view').classList.add('hidden');
+            document.getElementById('tab-tracking-view').classList.add('hidden');
+            document.getElementById('tab-vehicles-view').classList.add('hidden');
+            document.getElementById('tab-workers-view').classList.add('hidden');
+            document.getElementById('tab-attendance-view').classList.add('hidden');
+            document.getElementById('tab-reports-view').classList.add('hidden');
+            document.getElementById('tab-alerts-view').classList.add('hidden');
+            document.getElementById('tab-complaints-view').classList.add('hidden');
+            document.getElementById('tab-admin-view').classList.add('hidden');
+            document.getElementById('tab-settings-view').classList.add('hidden');
+
+            // Show target
+            document.getElementById(`tab-${tabId}-view`).classList.remove('hidden');
+
+            // Reset navigation highlight classes
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach(item => {
+                item.className = "nav-item flex items-center justify-between w-full px-4 py-3 text-sm font-semibold rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-150";
+                // Remove indicator dot if exists
+                const dot = item.querySelector('span.w-2');
+                if (dot) dot.remove();
+            });
+
+            // Set clicked active styling
+            const activeBtn = document.getElementById(`btn-tab-${tabId}`);
+            if (activeBtn) {
+                activeBtn.className = "nav-item flex items-center justify-between w-full px-4 py-3 text-sm font-semibold rounded-xl transition-all duration-150 bg-emerald-600 text-white shadow-md shadow-emerald-100 dark:shadow-none";
+                
+                // Append white dot indicator
+                const dotSpan = document.createElement('span');
+                dotSpan.className = "w-2 h-2 rounded-full bg-white";
+                activeBtn.appendChild(dotSpan);
+            }
+        }
+
+        // Notification dispatch function
+        function alertNotification(text, title = "Sanitation Room Update") {
+            const notif = document.getElementById('custom-notification');
+            const notifTitle = document.getElementById('notif-title');
+            const notifText = document.getElementById('notif-text');
+            
+            if (notifTitle && notifText && notif) {
+                notifTitle.innerText = title;
+                notifText.innerText = text;
+                notif.classList.remove('translate-y-[-150%]');
+                setTimeout(() => {
+                    notif.classList.add('translate-y-[-150%]');
+                }, 3500);
+            }
+        }
+
+        // Toggle real-time simulation on/off
+        function toggleSimulation() {
+            const btn = document.getElementById('btn-sim');
+            if (!isSimulating) {
+                isSimulating = true;
+                if (btn) {
+                    btn.className = "w-full py-2 px-3 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 transition-colors rounded-lg flex items-center justify-center gap-2 shadow-sm";
+                    btn.innerHTML = `<i class="fa-solid fa-pause animate-pulse"></i> <span>Simulation Running</span>`;
+                }
+                alertNotification("Live street simulation loops started! Vehicles moving coordinates...", "Simulation On");
+                
+                // Set moving loop
+                simInterval = setInterval(() => {
+                    // Update vehicle speed and progress metrics randomly
+                    for (let key in vehicleState) {
+                        const vehicle = vehicleState[key];
+                        
+                        // Increment route progress
+                        if (vehicle.progress < 100) {
+                            vehicle.progress += Math.floor(Math.random() * 3) + 1;
+                            if (vehicle.progress > 100) vehicle.progress = 100;
+                        } else {
+                            vehicle.progress = 30; // Reset loop progress
+                        }
+
+                        // Jitter GPS coordinates on SVG map for realism
+                        if (key === 'ab') {
+                            vehicle.pos.x = 40 + (Math.random() * 4 - 2);
+                            vehicle.pos.y = 42 + (Math.random() * 4 - 2);
+                        } else if (key === 'cd') {
+                            vehicle.pos.x = 65 + (Math.random() * 4 - 2);
+                            vehicle.pos.y = 49 + (Math.random() * 4 - 2);
+                        } else if (key === 'ef') {
+                            vehicle.pos.x = 20 + (Math.random() * 4 - 2);
+                            vehicle.pos.y = 80 + (Math.random() * 4 - 2);
+                        }
+
+                        // Update HTML pointer position styles on Map
+                        const element = document.getElementById(`map-node-${key}`);
+                        if (element) {
+                            element.style.left = `${vehicle.pos.x}%`;
+                            element.style.top = `${vehicle.pos.y}%`;
+                        }
+
+                        // Update tables text progress
+                        const progTxt = document.getElementById(`prog-${key}-txt`);
+                        const progBar = document.getElementById(`prog-${key}-bar`);
+                        if (progTxt && progBar) {
+                            progTxt.innerText = `${vehicle.progress}%`;
+                            progBar.style.width = `${vehicle.progress}%`;
+                        }
+                    }
+
+                    // Dynamically recalculate average area coverage metrics
+                    recalculateGeneralProgress();
+
+                }, 1800);
+
+            } else {
+                isSimulating = false;
+                if (btn) {
+                    btn.className = "w-full py-2 px-3 text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 active:bg-slate-950 dark:bg-slate-800 dark:hover:bg-slate-700 transition-colors rounded-lg flex items-center justify-center gap-2 shadow-sm";
+                    btn.innerHTML = `<i class="fa-solid fa-play"></i> <span>Start Live Movement</span>`;
+                }
+                alertNotification("Live street simulation paused. Coordinates locked.", "Simulation Paused");
+                clearInterval(simInterval);
+            }
+        }
+
+        // Recalculate gauge progress based on sum of simulated truck percentages
+        function recalculateGeneralProgress() {
+            let total = 0;
+            let count = 0;
+            for (let key in vehicleState) {
+                total += vehicleState[key].progress;
+                count++;
+            }
+            const avg = Math.round(total / count);
+            
+            // Adjust Gauge visual properties
+            const gaugeCircle = document.getElementById('gauge-circle');
+            if (gaugeCircle) {
+                // formula: 251.2 - (avg / 100 * 188.4)
+                const offset = 251.2 - (avg / 100 * 188.4);
+                gaugeCircle.style.strokeDashoffset = offset;
+            }
+
+            // Update texts in visual modules
+            const compTxt = document.getElementById('p-completed');
+            if (compTxt) compTxt.innerText = `${avg}%`;
+
+            const pendTxt = document.getElementById('p-pending');
+            if (pendTxt) pendTxt.innerText = `${100 - avg - 10}%`;
+        }
+
+        // Sync visual trigger on interval end
+        function simulateSyncPulse() {
+            alertNotification("Satellite data synchronizing... Metrics updated successfully.", "Automated Telemetry Sync");
+            // Jitter distance metric
+            const distanceSpan = document.getElementById('metric-distance');
+            if (distanceSpan) {
+                let cur = parseFloat(distanceSpan.innerText);
+                distanceSpan.innerText = (cur + 0.3).toFixed(1) + " km";
+            }
+        }
+
+        // Map Vehicle Node Clicks
+        function clickMapNode(key) {
+            const data = vehicleState[key];
+            const tooltip = document.getElementById('map-detail-tooltip');
+            
+            if (!data || !tooltip) return;
+
+            // Fill details
+            document.getElementById('tooltip-id').innerText = data.id;
+            document.getElementById('tooltip-driver').innerText = data.driver;
+            document.getElementById('tooltip-loc').innerText = data.location;
+            document.getElementById('tooltip-speed').innerText = data.speed;
+            document.getElementById('tooltip-prog').innerText = `${data.progress}%`;
+
+            // Display floating card
+            tooltip.classList.remove('hidden');
+
+            // Draw emphasis glow highlight to path SVG paths
+            document.getElementById('route-path-ab').setAttribute('stroke-width', '3');
+            document.getElementById('route-path-cd').setAttribute('stroke-width', '3');
+            document.getElementById('route-path-hi').setAttribute('stroke-width', '3');
+            document.getElementById('route-path-ef').setAttribute('stroke-width', '3');
+
+            const path = document.getElementById(`route-path-${key}`);
+            if (path) {
+                path.setAttribute('stroke-width', '6');
+            }
+
+            alertNotification(`Focused Live Map positioning on ${data.id}. Driver: ${data.driver}`, "Vehicle Spotlight");
+        }
+
+        // Close details box
+        function closeTooltip() {
+            document.getElementById('map-detail-tooltip').classList.add('hidden');
+        }
+
+        // Simulated High Severity SOS emergency alert trigger
+        function triggerSOSalert() {
+            alertNotification("CRITICAL: SOS Triggered by GJ-05-HI-9012. Driver reporting tire pressure hazard in Ward 15!", "Dispatched Alert SOS");
+            
+            // Switch counts stopped metrics instantly
+            document.getElementById('hdr-stopped').innerText = "2";
+            document.getElementById('metric-stopped-v').innerText = "2";
+        }
+    </script>
+</body>
+</html>
